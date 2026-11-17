@@ -74,7 +74,7 @@ if (( push )); then
   else
     git push origin main "v$new"
   fi
-  echo "CI: https://git.talhacigdem.tr/mtcsrv/reqly/actions   Release: https://git.talhacigdem.tr/mtcsrv/reqly/releases/tag/v$new"
+  echo "CI: https://github.com/reqly-dev/reqly/actions   Release: https://github.com/reqly-dev/reqly/releases/tag/v$new"
 else
   echo "push atlandı (--no-push); elle: git push origin main v$new"
 fi

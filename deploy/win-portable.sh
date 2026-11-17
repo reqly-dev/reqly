@@ -5,7 +5,7 @@
 # indirmez (Windows 10/11'de Edge ile zaten vardır) ve Başlat menüsü kısayolu oluşturmaz. Veri yine
 # %APPDATA%\tr.talhacigdem.reqly altındadır (uygulama taşınabilir, veri değil).
 # Önkoşul: `npm run sidecar:win` ve `npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc`
-# koşmuş olmalı (CI'da desktop job'u). Kullanım: deploy/win-portable.sh [sürüm] [çıktı dizini=dist]
+# koşmuş olmalı (CI'da release.yml → windows). Kullanım: deploy/win-portable.sh [sürüm] [çıktı dizini=dist]
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 version=${1:-$(node -p 'require(process.argv[1]).version' "$root/package.json")}
@@ -37,5 +37,10 @@ cp -r "$resources" "$stage/Reqly/resources"
 mkdir -p "$out"; out=$(cd "$out" && pwd)
 zipf="$out/Reqly_${version}_x64-portable.zip"
 rm -f "$zipf"
-(cd "$stage" && zip -qr -X "$zipf" Reqly)
+if command -v zip >/dev/null; then
+  (cd "$stage" && zip -qr -X "$zipf" Reqly)
+else
+  # Windows runner'ında (Git Bash) zip yok, 7-Zip var
+  (cd "$stage" && 7z a -tzip -bso0 -bsp0 "$(cygpath -w "$zipf" 2>/dev/null || echo "$zipf")" Reqly)
+fi
 echo "Taşınabilir paket: $zipf ($(du -h "$zipf" | cut -f1), $(find "$stage/Reqly" -type f | wc -l) dosya)"

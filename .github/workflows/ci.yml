@@ -1,0 +1,69 @@
+name: ci
+
+# Every push to main and every pull request: typecheck + Linux package + end-to-end smoke test
+# (launcher/smoke.mjs runs the packaged binary in portable mode and checks the sidecar contract and the local
+# server guard). Pull requests additionally need every commit signed off (DCO, see CONTRIBUTING.md).
+# Release builds (Windows / macOS / Linux) are in release.yml. No secrets are used here, so pull requests from
+# forks run with read-only permissions.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # The SEA blob and native module ABI must match the Node binary that package.mjs downloads,
+      # so the build runs on exactly the version in .nvmrc.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+
+      - name: Linux package
+        run: node launcher/package.mjs --target linux-x64 --version "0.0.0-dev.$(git rev-parse --short=7 HEAD)"
+
+      - name: Smoke test (packaged binary)
+        run: node launcher/smoke.mjs dist/package/linux-x64/Reqly/reqly
+
+  dco:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Every commit is signed off
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for c in $(git rev-list --no-merges "${BASE}..${HEAD}"); do
+            author=$(git show -s --format='%an <%ae>' "$c")
+            if ! git show -s --format='%B' "$c" | grep -qiF "Signed-off-by: ${author}"; then
+              echo "::error::$(git show -s --format='%h %s' "$c") — missing 'Signed-off-by: ${author}'"
+              missing=1
+            fi
+          done
+          if (( missing )); then
+            echo "Sign off your commits: git rebase --signoff ${BASE} && git push --force-with-lease (see CONTRIBUTING.md)"
+            exit 1
+          fi
+          echo "All commits are signed off."

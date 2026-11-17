@@ -1,0 +1,23 @@
+name: Feature request / Özellik isteği
+description: Suggest an idea or an improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Sorun
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal / Öneri
+      description: How could Reqly help? Postman or other tools' behaviour is a useful reference.
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Principles / İlkeler
+      options:
+        - label: This works without an account, cloud service or telemetry (Reqly is local-first).
+          required: true

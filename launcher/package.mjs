@@ -33,7 +33,7 @@
  * node.exe nodejs.org'dan indirilip SHA-256'sı doğrulanır, SEA blob'u postject ile PE dosyasına
  * enjekte edilir. Hiçbir adım derleyici gerektirmez.
  *
- * macOS hedefleri (darwin-arm64 / darwin-x64) yalnızca macOS üzerinde üretilir (CI: Gitea'ya kayıtlı Mac runner, etiket `macos-arm64`):
+ * macOS hedefleri (darwin-arm64 / darwin-x64) yalnızca macOS üzerinde üretilir (CI: release.yml → macos):
  * Node SEA belgesine göre Mach-O ikilide önce `codesign --remove-signature`, sonra postject
  * `--macho-segment-name NODE_SEA` ile enjeksiyon, sonra ad-hoc `codesign --sign -` gerekir ve codesign
  * yalnızca macOS'ta vardır. Linux'ta darwin hedefi istenirse betik hiçbir dosya üretmeden durur.
@@ -172,7 +172,7 @@ function hostCanBuild(target) {
 function hostCannotBuildMessage(targetName) {
   return (
     `${targetName} hedefi yalnızca macOS'ta üretilebilir (Mach-O ikilide codesign --remove-signature / --sign gerekir, ` +
-    `Linux/Windows'ta codesign yok). Bu hedef için CI'daki Mac runner'ını (build.yml → mac) kullanın; planı görmek için --plan ekleyin.`
+    `Linux/Windows'ta codesign yok). Bu hedef için CI'daki macOS işini (release.yml → macos) kullanın; planı görmek için --plan ekleyin.`
   );
 }
 

@@ -1,4 +1,4 @@
-//! Uygulama içi güncelleme (Gitea issue #9).
+//! Uygulama içi güncelleme.
 //!
 //! Frontend Tauri IPC kullanmadığı için akışın tamamı burada, Rust tarafındadır: sidecar
 //! `REQLY_READY` olduktan sonra ayrı bir async görev `update.auto_check` ayarına bakar, açıksa

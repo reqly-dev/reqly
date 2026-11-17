@@ -1,90 +1,83 @@
 # Reqly
 
-Tamamen yerel çalışan, hafif ve veri gizliliği odaklı API istemcisi (Postman alternatifi).
-Mimari kararlar için [TASARIM.md](./TASARIM.md) dosyasına bakın.
+A lightweight, local-first API client — a privacy-focused Postman alternative.
+No account, no cloud, no telemetry: your collections, environments and history stay on your machine.
 
-## Gereksinimler
+[Türkçe](README.tr.md) · [Download](https://reqly.talhacigdem.tr/download/latest/) · [Design notes (TR)](TASARIM.md)
 
-- Node.js ≥ 20
+## Features
 
-## Kurulum ve Çalıştırma
+- HTTP requests with params, headers, raw / urlencoded / form-data bodies, Bearer / Basic / API key auth with
+  inheritance from folders and collections
+- Collections → folders → requests, tabs, unsaved scratch requests, duplicate, rename
+- Environment / collection / global variables with `{{var}}` highlighting and inline editing; secret values are
+  masked in history and never exported unless you ask for it
+- Pre-request and post-response scripts in an isolated sandbox (`isolated-vm` in a separate process, time and memory
+  limited, no network / file access) with a `pm.*` compatibility layer and `pm.sendRequest`
+- Postman collection / environment import (files or straight from the Postman API) and Postman v2.1 export,
+  a `.reqly.json` share bundle, cURL import / export (bash and Windows cmd)
+- Request history grouped by day, timing breakdown (DNS / TCP / TLS / TTFB / download)
+- Proxy profiles with bypass lists, TLS verification switch, connection reuse
+- Turkish and English UI, dark and light themes
+- Desktop app built with Tauri 2 (Windows, macOS) with in-app updates; a portable Windows zip and a Linux
+  build for headless use
+
+## Install
+
+Download the latest release from the [download page](https://reqly.talhacigdem.tr/download/latest/) or from
+[GitHub Releases](https://github.com/reqly-dev/reqly/releases).
+
+| Platform | File | Notes |
+|---|---|---|
+| Windows | `Reqly_<version>_x64-setup.exe` | Per-user install, no admin rights; installs the Edge WebView2 runtime if missing |
+| Windows (portable) | `Reqly_<version>_x64-portable.zip` | No installation: unzip and run `Reqly\reqly.exe` (WebView2 must be present, as on Windows 10/11) |
+| macOS | `Reqly_<version>_aarch64.dmg` / `Reqly_<version>_x64.dmg` | Apple Silicon / Intel. Builds are not notarized yet: on first launch use System Settings → Privacy & Security → "Open Anyway" |
+| Linux | `Reqly-<version>-linux-x64.tar.gz` | Runs the server; open `http://127.0.0.1:7357` in a browser |
+
+Data lives in a single SQLite file: `%APPDATA%\tr.talhacigdem.reqly\reqly.db` on Windows,
+`~/Library/Application Support/tr.talhacigdem.reqly/reqly.db` on macOS, `data/reqly.db` (or `REQLY_DATA_DIR`)
+otherwise. The desktop app checks for updates once a day; this is its only outgoing call and can be turned off in
+Settings → Updates.
+
+## Development
+
+Requirements: Node.js (the exact version is pinned in [`.nvmrc`](.nvmrc)); Rust stable for the desktop shell.
 
 ```bash
 npm install
-npm run dev        # backend (127.0.0.1:7357) + UI (127.0.0.1:5173) birlikte
+npm run dev          # backend (127.0.0.1:7357) + UI (127.0.0.1:5173)
+npm run typecheck    # all workspaces
+npm run package:linux && npm run smoke   # package the Linux build and run the end-to-end smoke test
 ```
 
-Tarayıcıda `http://127.0.0.1:5173` adresini açın.
+Open `http://127.0.0.1:5173`. The monorepo has three packages: `packages/shared` (types and zod schemas — the API
+contract), `packages/server` (Fastify + better-sqlite3 + undici; script sandbox) and `packages/app` (React + Vite +
+zustand). The desktop shell in `src-tauri/` starts the server as a sidecar (`launcher/package.mjs` builds it with
+Node SEA) and loads its local address. Architecture decisions are documented in [TASARIM.md](TASARIM.md) (Turkish).
 
-Ayrı ayrı çalıştırmak için: `npm run dev:server` ve `npm run dev:app`.
-
-## Hazır paket (Windows kurulum dosyası / taşınabilir zip, Linux `reqly`)
-
-Geliştirme ortamı kurmadan kullanmak için Gitea'daki **Releases** sayfasından
-`Reqly_<sürüm>_x64-setup.exe` indirip kurun (kullanıcı hesabına kurulur, yönetici hakkı gerekmez;
-Edge WebView2 çalışma zamanı yoksa kurulum onu indirir). Exe indirmenin engellendiği (kurumsal) ağlarda
-`Reqly_<sürüm>_x64-portable.zip` indirin: kurulum gerektirmez, açıp `Reqly\reqly.exe`'yi çalıştırın.
-İçeriği kurulumun yüküyle aynıdır; farkı WebView2'yi indirmemesi (Windows 10/11'de Edge ile zaten
-vardır) ve Başlat menüsü kısayolu oluşturmamasıdır. Uygulama gerçek bir masaüstü penceresinde
-(Tauri 2) açılır; konsol penceresi ya da tarayıcı yoktur. Veri her iki biçimde de
-`%APPDATA%\tr.talhacigdem.reqly\reqly.db` dosyasında tutulur. Linux/sunucu kullanımı için
-`Reqly-<sürüm>-linux-x64.tar.gz` (tarayıcıdan `http://127.0.0.1:7357`) vardır.
-
-**macOS:** Releases'ta `Reqly_<sürüm>_aarch64.dmg` (Apple Silicon: M1 ve sonrası) ve `Reqly_<sürüm>_x64.dmg`
-(Intel) bulunur. Paketler imzasızdır (Apple Developer hesabı yok): dmg'yi açıp Reqly'yi Uygulamalar'a
-sürükleyin; ilk açılışta macOS "açılamıyor" derse Sistem Ayarları → Gizlilik ve Güvenlik → en altta
-"Yine de Aç". Veri `~/Library/Application Support/tr.talhacigdem.reqly/reqly.db` dosyasındadır. macOS
-paketleri CI'daki Mac runner'ında üretilir; o an çevrimdışıysa dmg'ler Release'e sonradan eklenir.
-
-Mimari: `Reqly.exe` Tauri kabuğudur (`src-tauri/`). Açılışta yanındaki `reqly-server.exe`'yi
-(resmî Node ikilisinin içine Node SEA ile gömülmüş ince başlatıcı, `launcher/reqly-launcher.js`)
-sidecar olarak başlatır; sunucu boş bir porttan kalkar, hazır olunca `REQLY_READY <adres>` yazar ve
-pencere o adrese gider. Uygulama kodu `resources/` altındadır (`server.cjs` + `worker.cjs` esbuild
-bundle'ları, `app/` vite çıktısı, `migrations/`, hedef platformun ön-derlenmiş `better-sqlite3` ve
-`isolated-vm` ikilileri). Pencere kapanınca sunucu da kapanır.
-
-Paketler **Gitea Actions** tarafından üretilir (`.gitea/workflows/build.yml`): `v1.2.3` tag'i Gitea
-Release üretir (Windows kurulum dosyası + taşınabilir zip + Linux tar.gz), elle tetikleme artifact bırakır; `main`
-push'unda paket yüklenmez, yalnızca typecheck + Linux paketi + duman testi koşar. Windows kurulum
-dosyası Linux runner'da `cargo-xwin` ile çapraz derlenir (`deploy/tauri-builder.Dockerfile` imajı).
-Yerelde üretmek için (Node sürümü `.nvmrc` ile aynı olmalı; bu makinede container içinde):
+Desktop builds:
 
 ```bash
-npm run package:linux                                                # dist/Reqly-<sürüm>-linux-x64.tar.gz
-npm run smoke                                                        # Linux paketini çalıştırıp uçtan uca doğrular
-npm run sidecar:win                                                  # Tauri sidecar'ı → src-tauri/binaries + resources
-npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc  # src-tauri/target/.../nsis/Reqly_<sürüm>_x64-setup.exe
-npm run portable:win                                                 # dist/Reqly_<sürüm>_x64-portable.zip (aynı yük, kurulumsuz)
+npm run sidecar:win && npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc   # Windows, cross-compiled from Linux
+npm run portable:win                                                                       # portable zip from the same payload
 ```
 
-Bilinen sınırlar: kurulum dosyası imzasızdır (Windows SmartScreen ilk açılışta uyarabilir);
-Linux için deb/AppImage henüz Release'e eklenmiyor.
+`deploy/tauri-builder.Dockerfile` provides a Linux build image with Rust, NSIS and cargo-xwin. Release builds for
+all platforms are produced by GitHub Actions ([`.github/workflows`](.github/workflows)).
 
-## Sunucuda / Docker'da çalıştırma
+## Running on a server
 
-Linux paketi (`npm run package:linux`) `deploy/Dockerfile` ile bir imaja konup headless çalıştırılabilir;
-container içinde sunucu `REQLY_HOST=0.0.0.0` ile dinler (yerel kullanımda varsayılan `127.0.0.1`), veri
-`/data` volume'undadır. Dış adla erişilecekse ad `REQLY_ALLOWED_HOSTS`'a eklenmelidir (Host denetimi).
+The Linux build can run headless (see [`deploy/Dockerfile`](deploy/Dockerfile)): set `REQLY_HOST=0.0.0.0` and add
+the public host name to `REQLY_ALLOWED_HOSTS`. **Put an authenticating reverse proxy in front of it.** Reqly is an
+HTTP client and script runner without its own login; anyone who can reach it can use it as a proxy into your network.
 
-- **Kimlik doğrulamalı bir ön kapı zorunludur.** Reqly kimlik doğrulaması olmayan bir HTTP istemcisi ve script
-  çalıştırıcısıdır; adresi bulan herkes onu bulunduğu ağa açılan bir proxy gibi kullanabilir. Bir ağa açarken
-  önüne kimlik doğrulayan bir ters vekil (ör. Cloudflare Access, oauth2-proxy) koyun.
+## Contributing
 
-## Veri
+Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md). Commits must be signed off
+([DCO](https://developercertificate.org/)). Security issues: see [SECURITY.md](SECURITY.md). This project follows
+the [Contributor Covenant](CODE_OF_CONDUCT.md).
 
-Tüm veri `data/reqly.db` SQLite dosyasında tutulur (`.gitignore`'da).
-Konumu değiştirmek için `REQLY_DATA_DIR` ortam değişkenini kullanın.
+## License
 
-## Faz 1 Kapsamı
-
-- İstek oluşturma/çalıştırma (params, headers, body, auth) — CORS'a takılmamak için tüm istekler backend'den atılır
-- Koleksiyon → klasör → istek hiyerarşisi
-- Ortam / koleksiyon / global değişkenler, `{{degisken}}` interpolasyonu, secret maskeleme
-- İstek geçmişi (snapshot mantığı)
-- Postman Collection v2/v2.1 ve Environment import'u (atomik, raporlu)
-
-Faz 2 (script sandbox, test runner) ve Faz 3 (Tauri paketleme, cURL/OpenAPI import) TASARIM.md'de tanımlıdır.
-
-## Lisans
-
-Reqly [Apache License 2.0](LICENSE) ile lisanslanmıştır; telif ve üçüncü taraf bildirimleri için [NOTICE](NOTICE).
+[Apache License 2.0](LICENSE). Copyright and third-party notices: [NOTICE](NOTICE),
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

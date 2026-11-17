@@ -84,27 +84,27 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   Windows SDK önbelleği + webkit2gtk + xvfb). Windows kurulum dosyası Linux'ta çapraz derlenir:
   `npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc` → `src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Reqly_<ver>_x64-setup.exe`.
   Linux: `npx tauri build --bundles deb`; pencere `xvfb-run` + `import -window root` ile ekran görüntüsü alınarak doğrulanır.
-  İmaj `.gitea/workflows/builder-image.yml` ile üretilip registry'ye basılır (Dockerfile değişince ya da elle).
+  İmaj yalnızca yerel derleme içindir (`docker build -f deploy/tauri-builder.Dockerfile -t reqly-tauri-builder deploy/`).
   Üçüncü taraf lisansları: `THIRD_PARTY_NOTICES.md`, `node launcher/third-party-notices.mjs --cargo` ile builder
   imajında yeniden üretilir (bağımlılık eklenince/güncellenince; elle düzenlenmez).
-- **CI (`.gitea/workflows/build.yml`)**: `main` push → typecheck + Linux paketi + duman testi
-  (`launcher/smoke.mjs`: taşınabilir mod + sidecar sözleşmesi: dinamik port, READY satırı, stdin
-  kapanınca çıkış); `v1.2.3` tag → ek olarak builder imajında Windows NSIS kurulum dosyası
-  ve aynı yükün (reqly.exe + reqly-server.exe + resources/) kurulumsuz zip'i (`deploy/win-portable.sh`,
-  yerelde `npm run portable:win`; exe indirmeyi engelleyen kurumsal ağlar için, WebView2'yi indirmez)
-  üretilip Linux `tar.gz` ile birlikte Gitea Release'ine eklenir; elle tetikleme → artifact.
-  Aynı tetikleyicilerle `mac` job'u (issue #10): Gitea'ya kayıtlı **self-hosted Apple Silicon Mac** runner'ında
-  (`runs-on: macos-arm64`, host kabuğu; act_runner etiketi `macos-arm64:host`) iki dmg üretir (aarch64 yerli,
-  x64 çapraz; isolated-vm x64 orada node-gyp ile derlenir), imzasız/ad-hoc, Release'e public API'den yükler.
-  Mac çevrimdışıysa iş kuyrukta bekler; Windows/Linux paketleri beklemez.
+- **CI (GitHub Actions, `.github/workflows/`)**: `ci.yml` — `main` push ve PR → typecheck + Linux paketi + duman testi
+  (`launcher/smoke.mjs`: taşınabilir mod + sidecar sözleşmesi: dinamik port, READY satırı, stdin kapanınca çıkış, kapı
+  bekçisi); PR'larda ayrıca her commit'te `Signed-off-by` (DCO, CONTRIBUTING.md) denetimi. Secret kullanmaz.
+  `release.yml` — `v1.2.3` etiketi → `linux` (tar.gz, duman testinden geçen dosyanın kendisi), `windows`
+  (`windows-latest`'te yerli derleme: frontend `npm run build` ile önce derlenir çünkü package.mjs `npm`'i kabuksuz
+  çağırır ve Windows'ta `npm.cmd` çözülmez → `--skip-app-build`; NSIS kurulumu + `deploy/win-portable.sh` ile taşınabilir
+  zip, zip yoksa 7-Zip), `macos` (`macos-latest` Apple Silicon: aarch64 yerli, x64 çapraz; isolated-vm x64 ön-derlemesi
+  orada node-gyp ile üretilir) ve hepsi bitince `release` işi GitHub Release'i oluşturur (`gh release`, önsürümde
+  `--prerelease`; yeniden koşturmada `upload --clobber`). Etiket sürümü `package.json` ile eşleşmezse `meta` düşer.
+  Elle tetikleme → yalnızca artifact. Secret: `TAURI_SIGNING_PRIVATE_KEY` (updater imzası; yoksa `.sig` üretilmez).
+  Paketler henüz kod imzasız (SmartScreen / Gatekeeper uyarır).
   Sürüm çıkarma tek komuttur: `npm run release rc|patch|minor|major|X.Y.Z` (`deploy/surum.sh`): dört
   manifest + package-lock yükselir, `Sürüm X` commit'i ve `vX` etiketi atılır, main + etiket push edilir
   (temiz ağaç ve `main` zorunlu; `--no-push` ile yalnızca yerel; `npm version` bilerek kullanılmaz, bkz. betik).
 - **Docker / public site**: `deploy/Dockerfile` Linux paketini headless imaja koyar (container'da
   `REQLY_HOST=0.0.0.0`, `REQLY_AUTH=off`, veri `/data`; önüne kimlik doğrulayan bir kapı gerekir, README). İndirme ve
-  updater sitesi (sayfalar, nginx stack'i, sürüm yayın betiği `site-publish.sh`, sürüm/yayın süreci anlatımı) bu
-  depoda değil, özel **`mtcsrv/reqly-site`** deposundadır (yerelde `../reqly-site`; etiket koşusunun `publish`
-  işleri onu `site-repo/` dizinine klonlar). Ayrıntı: @../reqly-site/CLAUDE.md
+  updater sitesi (`reqly.talhacigdem.tr`) bu depoda değildir; GitHub Release'lerinden beslenir. Bakımcı notları
+  (yerelde varsa): @../reqly-site/CLAUDE.md
 - Test altyapısı henüz yok. Doğrulama şu ana kadar `typecheck` + çalışan servera karşı curl ile
   uçtan uca API smoke testiyle yapılıyor (koleksiyon oluştur → değişken tanımla → execute → history kontrolü).
 - Veri `data/reqly.db` dosyasında (gitignore'da); `REQLY_DATA_DIR` ile taşınabilir.
@@ -415,7 +415,7 @@ script log/test sonuçları history'de kalıcı değil (yalnızca o çalıştır
 `isolated-vm@7` paketi Node ≥26 istiyor ama Node 24.15'te sorunsuz çalışıyor (bkz. `npm warn EBADENGINE`
 uyarısı — zararsız, göz ardı edilebilir).
 
-Depo: Gitea `mtcsrv/reqly` (asıl; CI burada koşar) + GitHub `reqly-dev/reqly` (`github` remote'u, public ayna).
+Depo: `https://github.com/reqly-dev/reqly` (CI, Release'ler, katkılar).
 
 ## Yol Haritası
 

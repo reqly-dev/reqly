@@ -1,0 +1,48 @@
+name: Bug report / Hata bildirimi
+description: Something does not work as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? / Ne oldu?
+      description: What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Adımlar
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Reqly version / Sürüm
+      description: Settings → Updates shows the installed version (or use the file name you installed).
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows (installer)
+        - Windows (portable zip)
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux / browser
+        - Development build (npm run dev)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Loglar
+      description: >
+        Windows: %APPDATA%\tr.talhacigdem.reqly\logs\shell.log. Remove tokens, passwords and other secrets before
+        pasting.
+      render: text

@@ -1,0 +1,212 @@
+name: release
+
+# v1.2.3 tag → Linux tar.gz, Windows NSIS installer + portable zip, macOS dmg (Apple Silicon + Intel) and the
+# Tauri updater packages with signatures, published as a GitHub Release. Manual run → the same files as a
+# workflow artifact, no release.
+#
+# Secrets: TAURI_SIGNING_PRIVATE_KEY (minisign key of the updater; without it no .sig files are produced and
+# installed apps will not accept the update). Builds are not code-signed yet (Windows SmartScreen / macOS
+# Gatekeeper warn on first launch).
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      app_version: ${{ steps.v.outputs.app_version }}
+    steps:
+      - uses: actions/checkout@v4
+      # version: sidecar build info (tag version, or 0.0.0-dev.<sha7> for manual runs).
+      # app_version: Tauri / NSIS version — NSIS needs x.y.z(-pre), so manual runs use package.json's version.
+      - id: v
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            v="${GITHUB_REF#refs/tags/v}"
+            [[ "$v" == "$(node -p 'require("./package.json").version')" ]] || { echo "::error::tag $v != package.json version"; exit 1; }
+            echo "version=$v" >> "$GITHUB_OUTPUT"; echo "app_version=$v" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-dev.$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+            echo "app_version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+          fi
+
+  linux:
+    needs: meta
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      - run: node launcher/package.mjs --target linux-x64 --version "${{ needs.meta.outputs.version }}"
+      # The released tar.gz is the exact file that passed the smoke test.
+      - run: node launcher/smoke.mjs dist/package/linux-x64/Reqly/reqly
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  windows:
+    needs: meta
+    runs-on: windows-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      APP_VERSION: ${{ needs.meta.outputs.app_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci --no-audit --no-fund
+      # package.mjs runs `npm` without a shell, which does not resolve npm.cmd on Windows: build the frontend here.
+      - run: npm run build -w @reqly/app
+      - name: Sidecar (win-x64)
+        run: node launcher/package.mjs --target win-x64 --version "${{ needs.meta.outputs.version }}" --sidecar-dir src-tauri --no-archive --skip-app-build
+      - name: Tauri (NSIS installer)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: |
+          set -euo pipefail
+          npx tauri build --target x86_64-pc-windows-msvc --bundles nsis --config "{\"version\":\"${APP_VERSION}\"}"
+          exe="src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Reqly_${APP_VERSION}_x64-setup.exe"
+          test -f "$exe" || { ls -la src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/ || true; exit 1; }
+          mkdir -p dist && cp "$exe" dist/
+          if [[ -f "$exe.sig" ]]; then cp "$exe.sig" dist/; else echo "::warning::no updater signature (.sig)"; fi
+      - name: Portable zip
+        run: bash deploy/win-portable.sh "${APP_VERSION}" dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            dist/*.exe
+            dist/*.sig
+            dist/*.zip
+          if-no-files-found: error
+
+  macos:
+    needs: meta
+    runs-on: macos-latest   # Apple Silicon; the Intel build is cross-compiled
+    timeout-minutes: 90
+    env:
+      APP_VERSION: ${{ needs.meta.outputs.app_version }}
+      VERSION: ${{ needs.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build -w @reqly/app
+
+      - name: Sidecar (darwin-arm64)
+        run: node launcher/package.mjs --target darwin-arm64 --version "$VERSION" --sidecar-dir src-tauri --no-archive --skip-app-build
+      - name: Tauri (aarch64)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: |
+          set -euo pipefail
+          # the updater package (Reqly.app.tar.gz) is only produced for the `app` bundle → --bundles app,dmg
+          npx tauri build --target aarch64-apple-darwin --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\"}"
+          mkdir -p dist
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg dist/
+          up=src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Reqly.app.tar.gz
+          if [[ -f "$up.sig" ]]; then
+            cp "$up" "dist/Reqly_${APP_VERSION}_aarch64.app.tar.gz"; cp "$up.sig" "dist/Reqly_${APP_VERSION}_aarch64.app.tar.gz.sig"
+          else echo "::warning::no updater package (aarch64)"; fi
+
+      # isolated-vm ships no darwin-x64 prebuild: build it here for x64 and put it where package.mjs looks for it.
+      - name: isolated-vm (x64)
+        run: |
+          set -euo pipefail
+          abi=$(node -p 'process.versions.modules')
+          ( cd node_modules/isolated-vm && npx node-gyp rebuild --release --arch=x64 -j max )
+          mkdir -p node_modules/isolated-vm/prebuilds/darwin-x64
+          cp "$(ls node_modules/isolated-vm/build/Release/isolated*vm.node | head -1)" "node_modules/isolated-vm/prebuilds/darwin-x64/isolated-vm.abi${abi}.node"
+          rm -rf node_modules/isolated-vm/build
+          file node_modules/isolated-vm/prebuilds/darwin-x64/*.node
+      - name: Sidecar (darwin-x64)
+        run: node launcher/package.mjs --target darwin-x64 --version "$VERSION" --sidecar-dir src-tauri --no-archive --skip-app-build
+      - name: Tauri (x64)
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: |
+          set -euo pipefail
+          npx tauri build --target x86_64-apple-darwin --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\"}"
+          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg dist/
+          up=src-tauri/target/x86_64-apple-darwin/release/bundle/macos/Reqly.app.tar.gz
+          if [[ -f "$up.sig" ]]; then
+            cp "$up" "dist/Reqly_${APP_VERSION}_x64.app.tar.gz"; cp "$up.sig" "dist/Reqly_${APP_VERSION}_x64.app.tar.gz.sig"
+          else echo "::warning::no updater package (x64)"; fi
+          ls -la dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: |
+            dist/*.dmg
+            dist/*.app.tar.gz
+            dist/*.sig
+          if-no-files-found: error
+
+  release:
+    needs: [meta, linux, windows, macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      V: ${{ needs.meta.outputs.app_version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: GitHub Release
+        run: |
+          set -euo pipefail
+          ls -la dist
+          cat > notes.md <<EOF
+          | Platform | File |
+          |---|---|
+          | Windows | \`Reqly_${V}_x64-setup.exe\` (installer) · \`Reqly_${V}_x64-portable.zip\` (no installation, run \`Reqly\\reqly.exe\`) |
+          | macOS | \`Reqly_${V}_aarch64.dmg\` (Apple Silicon) · \`Reqly_${V}_x64.dmg\` (Intel) |
+          | Linux | \`Reqly-${V}-linux-x64.tar.gz\` (server, open http://127.0.0.1:7357) |
+
+          Builds are not code-signed yet: Windows SmartScreen may warn (More info → Run anyway); on macOS use
+          System Settings → Privacy & Security → Open Anyway on first launch. \`*.sig\` and \`*.app.tar.gz\` files are
+          used by the in-app updater.
+          EOF
+          pre=(); [[ "$V" == *-* ]] && pre=(--prerelease)
+          if gh release view "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber -R "$GITHUB_REPOSITORY"
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" --title "Reqly $V" --notes-file notes.md "${pre[@]}"
+          fi
