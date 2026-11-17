@@ -80,12 +80,15 @@ jobs:
       # package.mjs runs `npm` without a shell, which does not resolve npm.cmd on Windows: build the frontend here.
       - run: npm run build -w @reqly/app
       - name: Sidecar (win-x64)
-        run: node launcher/package.mjs --target win-x64 --version "${{ needs.meta.outputs.version }}" --sidecar-dir src-tauri --no-archive --skip-app-build
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
+          node launcher/package.mjs --target win-x64 --version "${{ needs.meta.outputs.version }}" --sidecar-dir src-tauri --no-archive --skip-app-build
       - name: Tauri (NSIS installer)
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
           set -euo pipefail
           npx tauri build --target x86_64-pc-windows-msvc --bundles nsis --config "{\"version\":\"${APP_VERSION}\"}"
           exe="src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Reqly_${APP_VERSION}_x64-setup.exe"
@@ -93,7 +96,16 @@ jobs:
           mkdir -p dist && cp "$exe" dist/
           if [[ -f "$exe.sig" ]]; then cp "$exe.sig" dist/; else echo "::warning::no updater signature (.sig)"; fi
       - name: Portable zip
-        run: bash deploy/win-portable.sh "${APP_VERSION}" dist
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
+          bash deploy/win-portable.sh "${APP_VERSION}" dist
+      # Ham log'lar yalnızca oturum açmış kullanıcıya açık; düşen adımın son satırlarını herkese açık hata notu yap
+      - name: Failure summary
+        if: failure()
+        run: |
+          f="$RUNNER_TEMP/ci.log"; [[ -f "$f" ]] || exit 0
+          msg=$(tail -n 60 "$f" | sed -e 's/%/%25/g' | tr -d '\r' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=last log lines::${msg}"
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -124,12 +136,15 @@ jobs:
       - run: npm run build -w @reqly/app
 
       - name: Sidecar (darwin-arm64)
-        run: node launcher/package.mjs --target darwin-arm64 --version "$VERSION" --sidecar-dir src-tauri --no-archive --skip-app-build
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
+          node launcher/package.mjs --target darwin-arm64 --version "$VERSION" --sidecar-dir src-tauri --no-archive --skip-app-build
       - name: Tauri (aarch64)
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
           set -euo pipefail
           # the updater package (Reqly.app.tar.gz) is only produced for the `app` bundle → --bundles app,dmg
           npx tauri build --target aarch64-apple-darwin --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\"}"
@@ -143,6 +158,7 @@ jobs:
       # isolated-vm ships no darwin-x64 prebuild: build it here for x64 and put it where package.mjs looks for it.
       - name: isolated-vm (x64)
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
           set -euo pipefail
           abi=$(node -p 'process.versions.modules')
           ( cd node_modules/isolated-vm && npx node-gyp rebuild --release --arch=x64 -j max )
@@ -151,12 +167,15 @@ jobs:
           rm -rf node_modules/isolated-vm/build
           file node_modules/isolated-vm/prebuilds/darwin-x64/*.node
       - name: Sidecar (darwin-x64)
-        run: node launcher/package.mjs --target darwin-x64 --version "$VERSION" --sidecar-dir src-tauri --no-archive --skip-app-build
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
+          node launcher/package.mjs --target darwin-x64 --version "$VERSION" --sidecar-dir src-tauri --no-archive --skip-app-build
       - name: Tauri (x64)
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
           set -euo pipefail
           npx tauri build --target x86_64-apple-darwin --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\"}"
           cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg dist/
@@ -165,6 +184,13 @@ jobs:
             cp "$up" "dist/Reqly_${APP_VERSION}_x64.app.tar.gz"; cp "$up.sig" "dist/Reqly_${APP_VERSION}_x64.app.tar.gz.sig"
           else echo "::warning::no updater package (x64)"; fi
           ls -la dist/
+      # Ham log'lar yalnızca oturum açmış kullanıcıya açık; düşen adımın son satırlarını herkese açık hata notu yap
+      - name: Failure summary
+        if: failure()
+        run: |
+          f="$RUNNER_TEMP/ci.log"; [[ -f "$f" ]] || exit 0
+          msg=$(tail -n 60 "$f" | sed -e 's/%/%25/g' | tr -d '\r' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=last log lines::${msg}"
       - uses: actions/upload-artifact@v4
         with:
           name: macos

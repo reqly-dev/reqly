@@ -155,8 +155,13 @@ function parseArgs(argv) {
 }
 
 function run(cmd, cmdArgs, opts = {}) {
-  const res = spawnSync(cmd, cmdArgs, { stdio: 'inherit', ...opts });
-  if (res.status !== 0) fail(`${cmd} ${cmdArgs.join(' ')} → çıkış kodu ${res.status}`);
+  // Windows'ta npm bir .cmd betiğidir; Node .cmd/.bat dosyalarını kabuksuz başlatmaz (CVE-2024-27980).
+  // Argümanlar yalnızca bayrak/yol olduğundan kabukla çalıştırmak güvenlidir.
+  const shell = process.platform === 'win32' && cmd === 'npm';
+  const res = spawnSync(cmd, cmdArgs, { stdio: 'inherit', shell, ...opts });
+  if (res.status !== 0) {
+    fail(`${cmd} ${cmdArgs.join(' ')} → çıkış kodu ${res.status}${res.error ? ` (${res.error.message})` : ''}`);
+  }
 }
 
 /**
