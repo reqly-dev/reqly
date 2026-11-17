@@ -61,8 +61,8 @@ impl CheckSettings {
     }
 }
 
-/// READY adresini (`http://127.0.0.1:<port>/?reqly_token=<t>`) taban adres + oturum token'ına ayırır
-/// (issue #29). Token yalnızca yerel API çağrılarında `X-Reqly-Token` başlığıyla kullanılır, loglanmaz.
+/// READY adresini (`http://127.0.0.1:<port>/?reqly_token=<t>`) taban adres + oturum token'ına ayırır.
+/// Token yalnızca yerel API çağrılarında `X-Reqly-Token` başlığıyla kullanılır, loglanmaz.
 pub(crate) fn split_ready_url(ready: &str) -> Option<(String, Option<String>)> {
     let url = Url::parse(ready).ok()?;
     let token = url

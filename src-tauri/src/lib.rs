@@ -80,7 +80,7 @@ pub fn run() {
             }
 
             // Ana pencere config'te `create: false`; indirme olayını yakalamak için (dışa aktarmada
-            // "Farklı kaydet", issue #23) builder ile burada kurulur
+            // "Farklı kaydet") builder ile burada kurulur
             let window_config = app
                 .config()
                 .app
@@ -190,7 +190,7 @@ fn watch_sidecar(app: AppHandle, mut rx: tauri::async_runtime::Receiver<CommandE
                     let line = line.trim_end_matches(['\r', '\n']);
                     if let Some(url) = line.strip_prefix(READY_PREFIX) {
                         let url = url.trim();
-                        // Adres oturum token'ını taşır (issue #29): loga/diyaloğa yalnızca taban adres yazılır.
+                        // Adres oturum token'ını taşır: loga/diyaloğa yalnızca taban adres yazılır.
                         let (base, token) = update::split_ready_url(url).unwrap_or_else(|| (url.to_owned(), None));
                         crate::rlog!(
                             "[reqly] sunucu hazır: {base} (oturum token'ı: {})",

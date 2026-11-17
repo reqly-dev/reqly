@@ -134,7 +134,7 @@ interface AppState {
   updateFolder: (id: string, patch: HierarchyPatch) => Promise<FolderModel>;
   deleteFolder: (id: string) => Promise<void>;
   deleteRequest: (id: string) => Promise<void>;
-  /** Çoğaltma (issue #19): kopya aslının altına düşer; istek kopyası yeni sekmede açılır */
+  /** Çoğaltma: kopya aslının altına düşer; istek kopyası yeni sekmede açılır */
   duplicateRequest: (id: string) => Promise<void>;
   duplicateFolder: (id: string) => Promise<void>;
   duplicateCollection: (id: string) => Promise<void>;
@@ -588,7 +588,7 @@ export const useAppStore = create<AppState>((set, get) => {
         return;
       }
       const obj = json as { item?: unknown; values?: unknown; name?: unknown; format?: unknown };
-      // Reqly paylaşım paketi (issue #13): koleksiyon + ortam + globals tek dosyada, atomik yüklenir
+      // Reqly paylaşım paketi: koleksiyon + ortam + globals tek dosyada, atomik yüklenir
       const isBundle = obj.format === 'reqly-bundle';
       const isEnvironment = !isBundle && Array.isArray(obj.values) && obj.item === undefined;
       try {

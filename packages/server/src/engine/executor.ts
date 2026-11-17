@@ -32,7 +32,7 @@ function hasScript(steps: ScriptChainStep[]): boolean {
 }
 
 export async function executeRequest(input: ExecuteInput): Promise<ExecuteResult> {
-  // Süre dökümü (issue #17): hazırlık = toplam − scriptler − ağ; ağ adımları probe'dan
+  // Süre dökümü: hazırlık = toplam − scriptler − ağ; ağ adımları probe'dan
   const begin = now();
   const probe = new TimingProbe();
   const workspace = getDefaultWorkspace();
@@ -194,7 +194,7 @@ export async function executeRequest(input: ExecuteInput): Promise<ExecuteResult
   let redirects = 0;
 
   // Aktif proxy varsa ve hedef atlama listesinde değilse istek proxy'den gider (sonuçta viaProxy döner).
-  // Paylaşılan keep-alive havuzu (issue #18): ardışık isteklerde DNS/TCP/TLS tekrarlanmaz.
+  // Paylaşılan keep-alive havuzu: ardışık isteklerde DNS/TCP/TLS tekrarlanmaz.
   const { dispatcher, proxyName, proxyHost, release } = createDispatcherFor(url, {
     timeoutMs,
     maxRedirects,
@@ -234,7 +234,7 @@ export async function executeRequest(input: ExecuteInput): Promise<ExecuteResult
     const raw = err instanceof Error ? err.message : String(err);
     errorMessage =
       (proxyHost ? describeProxyError(err, proxyHost) : undefined) ??
-      // Havuzdan gelen bağlantı yanıtsız kapandı ve istek idempotent olmadığı için yinelenmedi (issue #18)
+      // Havuzdan gelen bağlantı yanıtsız kapandı ve istek idempotent olmadığı için yinelenmedi
       (probe.headersAt == null && !probe.openedConnection && !probe.retried && isStaleSocketError(err)
         ? msg('execute.staleConnection', { error: raw, method: input.method })
         : raw);

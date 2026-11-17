@@ -8,7 +8,7 @@ import { createContext, interpolate } from '../engine/interpolate.js';
 import { msg } from '../i18n/context.js';
 
 /**
- * İstek taslağını cURL komutuna çevirir (issue #16). Gönderilecek isteği executor ile aynı
+ * İstek taslağını cURL komutuna çevirir. Gönderilecek isteği executor ile aynı
  * kurallarla kurar (devralınan auth, yalnızca etkin satırlar, GET/HEAD'de gövde yok) ama pre-request
  * script çalıştırmaz. `resolveVariables=false` iken `{{var}}` olduğu gibi kalır.
  */

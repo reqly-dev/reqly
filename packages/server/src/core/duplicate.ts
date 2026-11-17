@@ -8,7 +8,7 @@ import { listVariables, upsertVariable } from '../db/repositories/variables.js';
 import { msg } from '../i18n/context.js';
 
 /**
- * Çoğaltma (issue #19). Her işlem tek transaction'dır: yarıda kalan kopya bırakmaz. Kopya adı
+ * Çoğaltma. Her işlem tek transaction'dır: yarıda kalan kopya bırakmaz. Kopya adı
  * "Ad (kopya)", aynı düzeyde çakışırsa "Ad (kopya 2)"... İstek ve klasör kopyası aslının hemen altına
  * yerleşir (kardeşlerin `sort_order`'ı yeniden yazılır); koleksiyon ve ortam ada göre sıralı listelenir.
  * Kopya her şeyi taşır: auth, script'ler, değişkenler (secret değer + işaret, enabled). History kopyalanmaz.

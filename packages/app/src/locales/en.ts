@@ -363,7 +363,7 @@ export const en: Record<MessageKey, string> = {
   'notice.invalidJsonFile': 'File is not valid JSON',
   'notice.importFailed': 'Import failed: {error}',
 
-  // Export (single collection / environment) and share bundle (issue #13)
+  // Export (single collection / environment) and share bundle
   'export.action': 'Export…',
   'export.title': 'Export — {name}',
   'export.format.collection': 'Downloads a Postman Collection v2.1 JSON file; Postman and Reqly can import it.',

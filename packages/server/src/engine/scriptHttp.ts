@@ -27,7 +27,7 @@ export async function sendScriptHttpRequest(
     throw new Error(msg('sendRequest.schemeUnsupported', { protocol: url.protocol }));
   }
 
-  // network.timeout_ms = 0 sınırsız demektir (#24); o zaman tek sınır script'in kalan süresidir
+  // network.timeout_ms = 0 sınırsız demektir; o zaman tek sınır script'in kalan süresidir
   const networkTimeoutMs = getSetting('network.timeout_ms');
   const timeoutMs = Math.max(1, networkTimeoutMs > 0 ? Math.min(networkTimeoutMs, opts.timeoutMs) : opts.timeoutMs);
   // Ana istekle aynı yol: aktif proxy varsa (ve hedef atlama listesinde değilse) buradan da proxy'den gider

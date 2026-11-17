@@ -17,7 +17,7 @@ interface Props {
   collectionId?: string;
 }
 
-/** Değer yalnızca `{{var}}` referanslarından oluşuyorsa parola maskelenmez (issue #28). */
+/** Değer yalnızca `{{var}}` referanslarından oluşuyorsa parola maskelenmez. */
 const ONLY_VARIABLES = /^\s*(\{\{\s*[\w.-]+\s*\}\}\s*)+$/;
 
 type AuthChoice = 'inherit' | 'none' | 'bearer' | 'basic' | 'apikey';

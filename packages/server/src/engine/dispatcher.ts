@@ -10,7 +10,7 @@ export interface DispatcherOptions {
   maxRedirects: number;
   verifyTls: boolean;
   /**
-   * Ayar (`network.reuse_connections`) açıksa süreç boyu paylaşılan keep-alive havuzunu kullan (issue #18).
+   * Ayar (`network.reuse_connections`) açıksa süreç boyu paylaşılan keep-alive havuzunu kullan.
    * Verilmezse yalnızca bu çağrıya özel dispatcher açılır (Postman API çekimi kendi ömrünü yönetir).
    */
   shared?: boolean;
@@ -40,7 +40,7 @@ const KEEP_ALIVE_TIMEOUT_MS = 30_000;
  * ayarlarıyla gönderilir: header/body zaman aşımı, yönlendirme sınırı, TLS doğrulaması (TASARIM.md §8)
  * ve varsa aktif proxy. undici v7'de `maxRedirections` isteğin değil Agent'ın bir interceptor'ıdır.
  *
- * Bağlantı yeniden kullanımı (issue #18): `shared` çağrılar, ağ ayarları (TLS doğrulaması, yönlendirme
+ * Bağlantı yeniden kullanımı: `shared` çağrılar, ağ ayarları (TLS doğrulaması, yönlendirme
  * sınırı, aktif proxy ve kimlik bilgisi) aynı kaldıkça tek bir doğrudan + tek bir proxy dispatcher'ını
  * paylaşır. Ayarlardan biri değişince anahtar değişir, eski havuz kapatılır (uçuştaki istekler biter) ve
  * yenisi açılır — `verify_tls=false` ile açılmış bir soket doğrulama açıkken asla kullanılmaz. Zaman aşımı
@@ -147,7 +147,7 @@ function probedFactories() {
 
 /**
  * Header/body zaman aşımı istek başına (paylaşılan havuzda çağıranlar farklı süre ister); yönlendirmeler devralır.
- * 0 = sınırsız (#24): undici 7.28 `headersTimeout`/`bodyTimeout` 0'da zamanlayıcı kurmaz (client-h1 `setTimeout`
+ * 0 = sınırsız: undici 7.28 `headersTimeout`/`bodyTimeout` 0'da zamanlayıcı kurmaz (client-h1 `setTimeout`
  * `if (delay)`; h2 `stream.setTimeout(0)`). Bağlantı kurma zaman aşımı (connector, 10 sn) bundan ayrıdır.
  */
 function requestTimeouts(timeoutMs: number): Dispatcher.DispatcherComposeInterceptor {

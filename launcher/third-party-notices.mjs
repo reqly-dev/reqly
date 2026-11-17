@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// THIRD_PARTY_NOTICES.md üretir (issue #31): dağıtılan pakete giren üçüncü taraf bileşenlerin lisansları.
+// THIRD_PARTY_NOTICES.md üretir: dağıtılan pakete giren üçüncü taraf bileşenlerin lisansları.
 //
 //   node launcher/third-party-notices.mjs            # npm bağımlılıkları + sabit girdiler (Node.js, Inter)
 //   node launcher/third-party-notices.mjs --cargo    # + Tauri kabuğunun Rust crate'leri (cargo gerekir;

@@ -4,8 +4,8 @@ import type { ExecuteTimings } from '@reqly/shared';
 import type { buildConnector } from 'undici';
 
 /**
- * Ana isteğin ağ adımlarını ölçer (issue #17). Bir yürütmeye bir probe düşer. Dispatcher'lar
- * paylaşılabildiği için (bağlantı yeniden kullanımı, issue #18) probe bağlantı fonksiyonuna değil
+ * Ana isteğin ağ adımlarını ölçer. Bir yürütmeye bir probe düşer. Dispatcher'lar
+ * paylaşılabildiği için (bağlantı yeniden kullanımı) probe bağlantı fonksiyonuna değil
  * isteğin async bağlamına bağlanır: `withProbe(probe, gönder)` içinde açılan bağlantılar
  * `probedConnector`'dan o probe'a yazılır, eşzamanlı başka isteklerin olayları karışmaz (undici'nin
  * connector'ı isteği gönderen çağrı zincirinde koşar; doğrudan + proxy tüneli deneyle doğrulandı).

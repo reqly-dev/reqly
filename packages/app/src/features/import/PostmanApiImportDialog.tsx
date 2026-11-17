@@ -45,7 +45,7 @@ function PostmanApiImport({ close }: { close: () => void }) {
   const refreshCollections = useAppStore((s) => s.refreshCollections);
   const refreshEnvironments = useAppStore((s) => s.refreshEnvironments);
   const bumpVariablesVersion = useAppStore((s) => s.bumpVariablesVersion);
-  // Aktif proxy Postman API çağrılarını da kapsar; kullanıcı bunu görmeden 'bağlanılamadı' almasın (issue #8)
+  // Aktif proxy Postman API çağrılarını da kapsar; kullanıcı bunu görmeden 'bağlanılamadı' almasın
   const activeProxy = useAppStore((s) => s.proxies.find((p) => p.isActive));
 
   const [apiKey, setApiKey] = useState('');

@@ -129,7 +129,7 @@ export function updateRequest(id: string, input: UpsertRequestInput): RequestMod
       JSON.stringify(input.params ?? []),
       input.body ? JSON.stringify(input.body) : null,
       input.auth ? JSON.stringify(input.auth) : null,
-      // İstek script'leri de güncellenir (önceden eksikti: Kaydet script değişikliğini kalıcı yazmıyordu, issue #14)
+      // İstek script'leri de güncellenir (önceden eksikti: Kaydet script değişikliğini kalıcı yazmıyordu)
       input.preRequestScript ?? null,
       input.postResponseScript ?? null,
       Date.now(),

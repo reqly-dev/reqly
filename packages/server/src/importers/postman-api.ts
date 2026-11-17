@@ -134,7 +134,7 @@ class PostmanApiClient {
         method: 'GET',
         headers: { 'x-api-key': this.apiKey, accept: 'application/json' },
         dispatcher: this.dispatcher,
-        // 0 = sınırsız (#24): AbortSignal.timeout(0) isteği hemen keserdi
+        // 0 = sınırsız: AbortSignal.timeout(0) isteği hemen keserdi
         signal: this.timeoutMs > 0 ? AbortSignal.timeout(this.timeoutMs) : undefined,
       });
       status = res.statusCode;

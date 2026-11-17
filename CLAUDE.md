@@ -34,7 +34,7 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   yönlendirir (`src-tauri/src/lib.rs`); 30 sn içinde gelmez ya da süreç çökerse hata diyaloğu + çıkış.
   Pencere kapanınca sidecar öldürülür; kabuk çökerse sidecar stdin kapanışını görüp kendini kapatır.
   **Ana pencere** `tauri.conf.json`'da `create: false`; `setup`'ta `WebviewWindowBuilder::from_config` + `on_download` ile kurulur.
-  **Dışa aktarma "Farklı kaydet"** (`src-tauri/src/download.rs`, issue #23): frontend dosyayı yine `<a download>` blob'u olarak verir;
+  **Dışa aktarma "Farklı kaydet"** (`src-tauri/src/download.rs`): frontend dosyayı yine `<a download>` blob'u olarak verir;
   kabuk indirmeyi geçici dizine alır (olay UI iş parçacığında senkron, içinde modal diyalog WebView2'de yeniden girişim riski),
   bitince asenkron kaydet diyaloğu (varsayılan İndirilenler, önerilen ad) açar, dosyayı taşır ve sayfaya `webview.eval` ile
   `reqly:file-saved` / `reqly:file-save-failed` DOM olayı yollar (IPC değil); iptal sessiz. Sunucu sidecar modunda `index.html`'e
@@ -42,12 +42,12 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   **Kabuk logu**: her `crate::rlog!` satırı stderr'e ve `<app_data_dir>/logs/shell.log`'a (Windows
   `%APPDATA%\tr.talhacigdem.reqly\logs\shell.log`, 1 MB'ta `shell.1.log`'a döner) yazılır; panik kancası da oraya
   yazar (`src-tauri/src/logging.rs`). Windows'ta GUI'nin stderr'i görünmediği için kapanma teşhisinde ilk bakılacak yer.
-  Tuzak (issue #15): `reqwest` eklenti yüzünden `rustls-no-provider` ile derlenir; kabukta reqwest istemcisi kurmadan
+  Tuzak: `reqwest` eklenti yüzünden `rustls-no-provider` ile derlenir; kabukta reqwest istemcisi kurmadan
   önce `rustls::crypto::ring::default_provider().install_default()` çağrılmalı, yoksa rustls paniği `panic=abort` ile
   süreci sessizce öldürür (rc.9 Windows). Linux'ta kabuk `xvfb-run` ile koşturulup `shell.log` okunarak yeniden üretildi.
   Sidecar adı `reqly-server` (Tauri, crate adı `reqly` ile aynı sidecar adını reddeder); script worker
   `windowsHide: true` ile açılır ki GUI'den gizli başlatılan konsol süreci yeni pencere açmasın.
-  **Uygulama içi güncelleme** (`src-tauri/src/update.rs`, `tauri-plugin-updater`, issue #9): READY'den 5 sn
+  **Uygulama içi güncelleme** (`src-tauri/src/update.rs`, `tauri-plugin-updater`): READY'den 5 sn
   sonra ayrı görev `GET /api/settings` → `update.auto_check` (yoksa açık) ve `GET /api/internal/proxy-url`
   (aktif proxy, yoksa doğrudan) okur, `https://reqly.talhacigdem.tr/updates/latest.json`'u denetler; yeni
   sürümde yerel diyalog "Şimdi kur / Sonra" ("Sonra" aynı sürüm için oturum boyunca susturur, denetim
@@ -189,7 +189,7 @@ history'ye **snapshot** yazımı (secret değerler `«masked»` ile maskelenir) 
   Yeni görünür metin (title/aria-label/placeholder dahil) **önce `tr.ts`'ye, sonra `en.ts`'ye** eklenir; bileşende sabit metin yazılmaz.
   Dil ayarı `ui.language` (`auto|tr|en`, sunucuda; tema gibi `localStorage['reqly.language']` yalnızca ilk boyama önbelleği, sunucu
   `index.html`'e `data-lang` basar). Tarih/sayı için `locale()` (`tr-TR`/`en-US`); her API isteği `X-Reqly-Lang: tr|en` başlığı taşır
-  (`api/client.ts`). Uygulamanın tüm görünür metinleri sözlükten gelir (issue #12, 2026-11-13); yeni metin eklerken
+  (`api/client.ts`). Uygulamanın tüm görünür metinleri sözlükten gelir (2026-11-13); yeni metin eklerken
   önce `tr.ts`, `en.ts` eksiği typecheck'te görünür. Kalan: site `/en/` sayfası.
 - **Sunucu i18n (tr/en)**: sunucudan kullanıcıya giden her metin (`{error}` gövdeleri, zod 400 ayrıntıları, `ExecuteResult.error`,
   script log/test mesajları, import raporu) `server/src/i18n/messages.ts` sözlüğünden gelir (anahtar → `{ tr, en }`, `{name}` yer
@@ -206,17 +206,17 @@ history'ye **snapshot** yazımı (secret değerler `«masked»` ile maskelenir) 
   `--highlight-*`, `--hover`, `--focus-ring`, `--shadow`, `--mask`, semantik `--green/--red/...`); bileşende
   sabit renk yazılmaz. Koyu tema `:root`, açık tema `html[data-theme="light"]`. Tercihin kalıcı kaynağı sunucudaki
   `ui.theme` ayarıdır (`lib/theme.ts` → `lib/uiPrefs.ts`, `PATCH /api/settings`); `localStorage['reqly.theme']` yalnızca
-  önbellektir çünkü Tauri her açılışta farklı port = farklı origin ile açar ve depolama boş başlar (issue #7). Paketlenmiş/
+  önbellektir çünkü Tauri her açılışta farklı port = farklı origin ile açar ve depolama boş başlar. Paketlenmiş/
   `start` modunda sunucu `index.html`'i `/` ve `/index.html` için `<html data-theme="…">` basarak verir (`Cache-Control:
   no-cache`); `index.html`'deki satır içi script bu değer varsa dokunmaz, yoksa localStorage → sistem → koyu. Bölme
   boyutları (`SplitPane`, `ui.sidebar_width`/`ui.request_pane_ratio`) aynı yolla saklanır. Palet: ana renk iki temada da
   tek renk kırmızı `#d00000` (WCAG eşiği: koyu zeminde 3,1:1, beyaz metinle 5,7:1; `#af0000` koyu temada okunmadığı için),
-  hata kırmızısı accent'ten ayrışsın diye hafif turuncu, yeşil yalnızca başarı/GET için (issue #5; önceki palet
+  hata kırmızısı accent'ten ayrışsın diye hafif turuncu, yeşil yalnızca başarı/GET için (önceki palet
   yeşildi). İkonlar
-  `lucide-react` (issue #6): emoji/unicode simge kullanılmaz, `lib/icons.ts`'teki `iconProps` (16px, stroke 2) ile
+  `lucide-react`: emoji/unicode simge kullanılmaz, `lib/icons.ts`'teki `iconProps` (16px, stroke 2) ile
   tutarlı boyut; font yerel "Inter var" (`public/fonts/`, OFL), uzak font yok. Üst bardaki açılır menüler ortak
   `components/DropdownMenu.tsx` (klavye + aria) üzerinden.
-  **Marka varlıkları** (issue #11): kaynak SVG'ler `packages/app/src/assets/brand/` (`reqly-mark.svg`,
+  **Marka varlıkları**: kaynak SVG'ler `packages/app/src/assets/brand/` (`reqly-mark.svg`,
   `reqly-mark-bold.svg` = aynı path + ~%3 kontur, 16–24 px için; `reqly-wordmark.svg`; birebir kopyaları reqly-site deposunun `site/assets/`'ında),
   hepsi `fill="currentColor"` tek `evenodd` path, sabit renk yok — renk `--accent`'ten gelir. Üst bar
   `components/ReqlyMark.tsx` (path verisi bold SVG ile aynı; SVG değişirse bileşen de güncellenir). Favicon
@@ -332,7 +332,7 @@ Tamamlananlar — Faz 1 + arayüz geliştirmeleri + Faz 2'nin script sandbox çe
   `CodeEditor` bileşenini kullanıyor; JSON/XML için "Beautify" butonu var (bkz. yukarıdaki
   "CodeEditor" notu).
 - **Ayarlar API'si + TLS doğrulama anahtarı**: `GET/PATCH /api/settings` (`api/settings.routes.ts`,
-  zod `settingsPatchSchema` `network.verify_tls` / `timeout_ms` (0 = sınırsız, hata ayıklama için; #24 — bağlantı kurma ayrıca undici connector varsayılanı 10 sn ile sınırlı) / `max_redirects` ile UI tercihleri `ui.theme`
+  zod `settingsPatchSchema` `network.verify_tls` / `timeout_ms` (0 = sınırsız, hata ayıklama için; bağlantı kurma ayrıca undici connector varsayılanı 10 sn ile sınırlı) / `max_redirects` ile UI tercihleri `ui.theme`
   (`dark|light`), `ui.sidebar_width` (100–2000 px), `ui.request_pane_ratio` (0.05–0.95), `ui.language` (`auto|tr|en`,
   bkz. "i18n")'ı açar; bkz. "Tema");
   `network.reuse_connections` için bkz. "Bağlantı yeniden kullanımı".
@@ -340,22 +340,22 @@ Tamamlananlar — Faz 1 + arayüz geliştirmeleri + Faz 2'nin script sandbox çe
   açar ve `ExecuteResult.tlsVerified=false` döner (ResponseViewer'da "TLS doğrulaması kapalı" uyarısı;
   `features/settings/SettingsMenu.tsx`). Kalıcı çözüm `NODE_EXTRA_CA_CERTS` ile kurum CA'sını tanıtmaktır.
   `update.auto_check` (boolean, varsayılan `true`; Ayarlar > Güncellemeler) masaüstü kabuğunun açılıştaki
-  sürüm denetimini kapatır — uygulamanın tek dış çağrısı, tarayıcıdan kullanımda etkisiz (issue #9).
+  sürüm denetimini kapatır — uygulamanın tek dış çağrısı, tarayıcıdan kullanımda etkisiz.
   Kabuğa özel `GET /api/internal/proxy-url` (`api/internal.routes.ts`, `core/proxyUrl.ts`) aktif proxy'yi
   kimlik bilgisi dahil `{ url: "http://u:p@host:port" }` (yoksa `{ url: null }`) olarak döner ki updater
   kurum proxy'sinden geçebilsin; kullanıcıya açık `GET /api/proxies` parolayı vermeye devam etmez.
 
-- **Proxy profilleri** (2026-11-13, issue #4): `proxies` tablosu (0002), `/api/proxies` CRUD + `PUT /api/proxies/active`
+- **Proxy profilleri** (2026-11-13): `proxies` tablosu (0002), `/api/proxies` CRUD + `PUT /api/proxies/active`
   (en fazla bir aktif; parola API'ye dönmez, `hasPassword`). Ana istek, `rq.sendRequest` ve Postman API çekimi aynı
   `createDispatcherFor` yolundan geçer; atlama listesi (`tam ad`, `.sonek`, `*`; loopback her zaman doğrudan), Türkçe proxy
   hataları (407, bağlanılamadı, tünel). UI: üst barda proxy menüsü + yönetim diyaloğu (`features/proxy/`), yanıtta
   "proxy: ad" rozeti. Bilinen sınır: yönlendirme hedefi ilk dispatcher kararını paylaşır.
-- **Postman'dan çek** (2026-11-13, issue #8): `importers/postman-api.ts` Postman API'den (`X-Api-Key`) workspace →
+- **Postman'dan çek** (2026-11-13): `importers/postman-api.ts` Postman API'den (`X-Api-Key`) workspace →
   koleksiyon/ortam envanteri (`POST /api/import/postman-api/inventory`) ve seçilenlerin toplu içe aktarımı
   (`POST /api/import/postman-api`; koleksiyonlar/ortamlar mevcut importer'a, workspace global'leri `importPostmanGlobals`'a).
   Anahtar saklanmaz/loglanmaz; 401 anahtar reddi işlemi keser, tek öğe hatası `failed[]`'e düşer, 429'da bir kez yeniden
   denenir. UI: İçe aktar ▾ → Postman'dan çek… (`features/import/`). Test için `REQLY_POSTMAN_API_BASE`.
-- **Dışa aktarma + paylaşım paketi** (2026-11-13, issue #13): `exporters/postman-v2.ts` importer'ın simetriği —
+- **Dışa aktarma + paylaşım paketi** (2026-11-13): `exporters/postman-v2.ts` importer'ın simetriği —
   `exportCollection` Postman v2.1 (`info.schema` v2.1.0, iç içe `item`, yapılandırılmış `url` + `raw`, `header/query`
   `disabled`, `body` raw/urlencoded/formdata + `options.raw.language`, auth bearer/basic/apikey/noauth, `event[]`,
   `variable[]` `type: secret|default` + `disabled`), `exportEnvironment` (Postman environment, `_postman_variable_scope`),
@@ -364,14 +364,14 @@ Tamamlananlar — Faz 1 + arayüz geliştirmeleri + Faz 2'nin script sandbox çe
   (`api/export.routes.ts`): `GET /api/export/options`, `GET /api/export/collections/:id?secrets=0|1`,
   `GET /api/export/environments/:id?secrets=`, `POST /api/export/bundle` (`bundleExportSchema`); hepsi
   `Content-Disposition: attachment` (ASCII `filename` + RFC 5987 `filename*`; `<ad>.collection.json`,
-  `<ad>.environment.json` (içerik Postman biçiminde, ad nötr; #26), `reqly-paket-<YYYY-MM-DD>.reqly.json`). **Secret kuralı:** `secrets=1` /
+  `<ad>.environment.json` (içerik Postman biçiminde, ad nötr), `reqly-paket-<YYYY-MM-DD>.reqly.json`). **Secret kuralı:** `secrets=1` /
   `includeSecrets=true` değilse secret değişkenler anahtarı ve `type: "secret"` ile ama **boş değerle** gider.
   İçe: `POST /api/import/bundle` (`importers/bundle.ts`; `format`/`version` denetimi 400, tüm parçalar tek
   `db.transaction` — iç importer transaction'ları savepoint'e dönüşür, bir parça bozuksa hiçbir şey yazılmaz
   `import.bundleFailed`), `secretsIncluded=false` ise `import.bundleSecretsEmpty` uyarısı (adlar listelenir);
   `POST /api/import/postman` gövdesi `format: "reqly-bundle"` ise aynı yola yönlenir. Round-trip (import → export →
   import → export birebir) ve `postman-collection` SDK parse'ı uçtan uca doğrulandı. Reqly'ye özgü ek alan üretilmez.
-- **cURL kopyala / yapıştır** (2026-11-15, issue #16): `importers/curl.ts` bash (`\\` devamı, `'…'`, `"…"`, `$'…'`) ve
+- **cURL kopyala / yapıştır** (2026-11-15): `importers/curl.ts` bash (`\\` devamı, `'…'`, `"…"`, `$'…'`) ve
   Windows cmd (`^` kaçışı/devamı + MSVCRT argüman kuralları; Chrome "Copy as cURL (cmd)") sözdizimini otomatik algılar;
   `Authorization` başlığı auth'a, query params'a taşınır; tanınmayan/aktarılamayan bayraklar `warnings`'e. `exporters/curl.ts`
   executor kurallarıyla (devralınan auth, etkin satırlar, GET/HEAD'de gövde yok) bash ya da cmd komutu üretir; `{{var}}`
@@ -379,7 +379,7 @@ Tamamlananlar — Faz 1 + arayüz geliştirmeleri + Faz 2'nin script sandbox çe
   yazmaz), `POST /api/export/curl`. UI: URL kutusuna `curl …` yapıştırınca aktif sekme dolar; İçe aktar ▾ → cURL'den…
   (yeni sekme); url-row'da `Terminal` menüsü (`features/request-builder/CurlCopyMenu.tsx`, `lib/clipboard.ts`).
   cmd kaçışı Chrome'unkidir, ters bölüler yalnızca `"` öncesinde ikilenir (Chrome hepsini ikiler).
-- **Süre dökümü** (2026-11-16, issue #17): `ExecuteResult.timings` (`ExecuteTimings`: hazırlık, pre/post script, soket,
+- **Süre dökümü** (2026-11-16): `ExecuteResult.timings` (`ExecuteTimings`: hazırlık, pre/post script, soket,
   DNS, TCP, TLS, proxy tüneli + hedef TLS, bekleme/TTFB, indirme, toplam; `null` = adım yok/ölçülemedi), history'de
   `timings_json` (0003). Ölçüm `engine/timing.ts` `TimingProbe`: yürütmeye özel dispatcher'ın connector'ı sarılır
   (`createDispatcherFor(…, { probe })`; doğrudan `buildConnector`, proxy'de `clientFactory`+`factory`), soket olayları
@@ -387,7 +387,7 @@ Tamamlananlar — Faz 1 + arayüz geliştirmeleri + Faz 2'nin script sandbox çe
   ayrıştırıcı yüklediği için olay geç gelir). Yalnızca ilk soket izlenir, yönlendirmeler `waitMs` içinde (`redirects`).
   `durationMs` anlamı değişmedi (ağ). UI: süre yazısının üzerinde waterfall açılır pencere. Dispatcher paylaşıldığı için probe
 connector'a değil isteğin `AsyncLocalStorage` bağlamına bağlanır (`withProbe`/`probedConnector`).
-- **Yerel kapı bekçisi** (2026-11-16, issue #29; TASARIM.md §8/2): `security/localGuard.ts` her istekte (dil hook'undan
+- **Yerel kapı bekçisi** (2026-11-16; TASARIM.md §8/2): `security/localGuard.ts` her istekte (dil hook'undan
   sonra) Host adını loopback (`127.0.0.1`/`localhost`/`[::1]`) + `REQLY_ALLOWED_HOSTS` ile sınar (DNS rebinding → 421; Host
   yoksa geçer), durum değiştiren yöntemde yabancı `Origin`'i 403'ler, `REQLY_SESSION_TOKEN` varsa `X-Reqly-Token` başlığı ya da
   `reqly_session_<port>` çerezi ister (401). Token'ı paketlenmiş başlatıcı üretir (`REQLY_AUTH=off` hariç; `deploy/Dockerfile`
@@ -395,18 +395,18 @@ connector'a değil isteğin `AsyncLocalStorage` bağlamına bağlanır (`withPro
   çerezi kurup token'sız adrese 302 ile döner. Kabuk token'ı READY adresinden ayırır (`update::split_ready_url`), updater'ın
   yerel çağrılarına başlık olarak ekler, loga yazmaz. Geliştirmede (`npm run dev`/`start`) token yok, Host/Origin denetimi açık.
   Sunucuya curl ile elle istek atarken paketli modda `-H "X-Reqly-Token: …"` gerekir. Duman testi kapıyı da sınar.
-- **Bağlantı yeniden kullanımı** (2026-11-16, issue #18): `network.reuse_connections` (varsayılan açık, Ayarlar > Ağ).
+- **Bağlantı yeniden kullanımı** (2026-11-16): `network.reuse_connections` (varsayılan açık, Ayarlar > Ağ).
   `engine/dispatcher.ts` havuzu; anahtar = verify_tls + max_redirects + aktif proxy (kimlik dahil, özet) → değişince eski
   havuz kapanır. Zaman aşımı istek başına interceptor'la. `sendWithStaleRetry`: havuzdan gelen bağlantı yanıtsız
   kapanırsa idempotent istek bir kez yinelenir (`timings.retried`), POST/PATCH'te `execute.staleConnection` hatası.
   Ayrıntı ve bedeli TASARIM.md'de.
-- **Çoğaltma** (2026-11-16, issue #19): `core/duplicate.ts` + `POST /api/{requests|folders|collections|environments}/:id/duplicate`
+- **Çoğaltma** (2026-11-16): `core/duplicate.ts` + `POST /api/{requests|folders|collections|environments}/:id/duplicate`
   (201, tek transaction). Ad "Ad (kopya)", çakışırsa "(kopya 2)"…, ek `duplicate.suffix` ile istek dilinde; kopyanın kopyası kök
   adı kullanır. İstek/klasör kopyası aslının hemen altına (`reorderRequests`/`reorderFolders` kardeş `sort_order`'ını yeniden yazar);
   klasör/koleksiyon alt ağacı özyinelemeli; koleksiyon değişkenleri ve ortam değişkenleri secret değer + işaret + enabled ile
   kopyalanır; kopya ortam etkin yapılmaz. UI: ağaç satırında ve Ortamlar penceresinde `Copy` simgesi; istek kopyası yeni sekmede
   açılır, ortam kopyası seçilir. `api.post` gövdesizken `Content-Type` göndermez (Fastify boş JSON gövdeyi 400'ler).
-- **Üst bar sadeleştirmesi** (2026-11-13, issue #1–#3): "+ Yeni istek" kalktı (sekme + / Alt+T), ortam seçici + Ortamlar
+- **Üst bar sadeleştirmesi** (2026-11-13): "+ Yeni istek" kalktı (sekme + / Alt+T), ortam seçici + Ortamlar
   tek menü (Ortam yok / ortamlar / Ortamlar… / Değişkenler…), Ayarlar yalnızca simge, İçe aktar menüsü (Dosyadan… /
   Postman'dan çek…).
 
@@ -427,11 +427,11 @@ Depo: `https://github.com/reqly-dev/reqly` (CI, Release'ler, katkılar).
       script sandbox (rq.*/pm.* davranışları) için birim testleri, import→export round-trip testi
 
 ### Faz 3 — Paketleme ve genişletme
-- [x] Postman v2.1 **export** + `.reqly.json` paylaşım paketi (2026-11-13, issue #13; round-trip doğrulandı)
+- [x] Postman v2.1 **export** + `.reqly.json` paylaşım paketi (2026-11-13; round-trip doğrulandı)
 - [x] **Tauri kabuğu** (2026-11-11): `src-tauri/`, sidecar sözleşmesi, Linux'ta çapraz derlenen
       Windows NSIS kurulum dosyası (bkz. "Masaüstü paketi"). Kalan: kod imzası,
       Linux deb/AppImage'ın Release'e eklenmesi, Windows'ta gerçek cihaz testi (kullanıcı).
-- [x] cURL import/export (bash + Windows cmd; 2026-11-15, issue #16)
+- [x] cURL import/export (bash + Windows cmd; 2026-11-15)
 - [ ] OpenAPI import
 - [ ] Cookie yönetimi: `engine/cookie-jar.ts` + UI
 - [ ] Secret değerlerin OS keychain'e taşınması (tabloda yalnızca referans)
@@ -440,7 +440,7 @@ Depo: `https://github.com/reqly-dev/reqly` (CI, Release'ler, katkılar).
 ### Birikmiş küçük işler (fazdan bağımsız)
 - [ ] Raw body editöründe `{{var}}` vurgusu (VariableInput overlay tekniğinin textarea'ya uyarlanması)
 - [ ] İstek/klasör taşıma (drag-and-drop) ve `sort_order` güncelleme endpoint'i
-- [x] History'de gün başlıklarıyla gruplama (2026-11-16, issue #20: Bugün/Dün/tarih, yapışkan başlık + kayıt sayısı)
+- [x] History'de gün başlıklarıyla gruplama (2026-11-16: Bugün/Dün/tarih, yapışkan başlık + kayıt sayısı)
 - [ ] History'de arama/filtreleme
 - [ ] Çoklu workspace desteği (şema hazır, `getDefaultWorkspace()` tekil varsayıyor)
 - [ ] GraphQL body modu için özel editör (import şu an raw JSON'a indirgiyor)

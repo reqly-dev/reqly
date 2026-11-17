@@ -20,7 +20,7 @@ export function RequestBuilder() {
   const [section, setSection] = useState<Tab>('params');
   const t = useT();
   const { draft, dirty, executing } = tab;
-  // URL kutusu taban + etkin param'lardan türetilir (issue #25). Yazarken ham metin
+  // URL kutusu taban + etkin param'lardan türetilir. Yazarken ham metin
   // tutulur: `?a` / sondaki `&` gibi türetilmişten farklı ama aynı anlama gelen metin
   // korunur ki imleç zıplamasın. Ham metin draft'la artık eşleşmiyorsa (tablo değişti,
   // sekme değişti) ya da odak gidince türetilmiş değer gösterilir.
@@ -76,7 +76,7 @@ export function RequestBuilder() {
             if (e.key === 'Enter') void send();
           }}
           onPaste={(e) => {
-            // Yapıştırılan bir cURL komutuysa URL'ye yazılmaz, isteğe çevrilir (issue #16)
+            // Yapıştırılan bir cURL komutuysa URL'ye yazılmaz, isteğe çevrilir
             const text = e.clipboardData.getData('text/plain');
             if (!isCurlCommand(text)) return;
             e.preventDefault();

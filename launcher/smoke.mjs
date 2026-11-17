@@ -14,7 +14,7 @@
  * ile açılan süreç stdout'a `REQLY_READY http://127.0.0.1:<port>/` yazar, o porttan API cevap
  * verir ve stdin kapanınca (kabuk öldü) süreç kendi kendine çıkar.
  *
- * Yerel kapı bekçisi (issue #29): yabancı Host 421, token'sız 401, yabancı Origin'li POST 403,
+ * Yerel kapı bekçisi: yabancı Host 421, token'sız 401, yabancı Origin'li POST 403,
  * `?reqly_token=` ile açılış çerez kurup token'sız adrese yönlendirir.
  */
 import { spawn } from 'node:child_process';

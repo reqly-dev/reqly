@@ -388,7 +388,7 @@ export const tr = {
   'notice.invalidJsonFile': 'Dosya geçerli JSON değil',
   'notice.importFailed': 'İçe aktarma hatası: {error}',
 
-  // Dışa aktarma (tek koleksiyon / ortam) ve paylaşım paketi (issue #13)
+  // Dışa aktarma (tek koleksiyon / ortam) ve paylaşım paketi
   'export.action': 'Dışa aktar…',
   'export.title': 'Dışa aktar — {name}',
   'export.format.collection': 'Postman Collection v2.1 JSON dosyası indirilir; Postman ve Reqly içe aktarabilir.',

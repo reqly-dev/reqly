@@ -278,7 +278,7 @@ yaygın), aksi halde `Agent`. Atlama listesi: tam ad, `.sonek`, `*`; loopback he
 yönlendirme hedefi ilk dispatcher kararını paylaşır. Parola DB'de düz metindir (değişken secret'larıyla aynı durum;
 OS keychain Faz 3).
 
-**Bağlantı yeniden kullanımı (issue #18, 2026-11-16):** `network.reuse_connections` (varsayılan açık) iken ana istek ve
+**Bağlantı yeniden kullanımı (2026-11-16):** `network.reuse_connections` (varsayılan açık) iken ana istek ve
 `rq.sendRequest` süreç boyu paylaşılan bir doğrudan + bir proxy dispatcher'ı kullanır (keep-alive; sunucu `Keep-Alive`
 bildirmezse boşta 30 sn). Havuz anahtarı TLS doğrulaması + yönlendirme sınırı + aktif proxy (adres ve kimlik bilgisi,
 SHA-256 özeti); biri değişince eski havuz kapatılır — `verify_tls=false` ile açılmış soket doğrulama açıkken kullanılmaz.
@@ -290,10 +290,10 @@ dispatcher'ını açıp kapatır.
 
 UI tercihleri (`ui.theme`, `ui.sidebar_width`, `ui.request_pane_ratio`) de `settings` tablosundadır: Tauri kabuğu
 sidecar'ı her açılışta farklı porttan yüklediği için tarayıcı depolaması origin'le birlikte sıfırlanır; kalıcı kaynak
-sunucudur, sunucu `index.html`'i kayıtlı temayla basar (issue #7).
+sunucudur, sunucu `index.html`'i kayıtlı temayla basar.
 
 
-### 4.5 Dosya Tabanlı Koleksiyon Depolama (Git ile çalışma) — issue #30
+### 4.5 Dosya Tabanlı Koleksiyon Depolama (Git ile çalışma)
 
 > **Durum: tasarım onaylandı (paket A, 2026-11-16); uygulama B–F paketlerinde.** Uygulanınca §1/1 ("tek SQLite dosyası") ve §4.1–4.2 bu bölüme göre
 > güncellenir. Kararlar (2026-11-16): YAML, istek başına bir dosya; mevcut koleksiyonlar tek seferlik geçişle dosyaya
@@ -614,7 +614,7 @@ Her import sonunda kullanıcıya özet dönülür:
 - Atlananlar ve nedenleri (desteklenmeyen auth tipi, dosya body'si, desteklenmeyen `pm.*` çağrıları)
 - Uyarılar (çözülemeyen değişken referansları vb.)
 
-**Postman API'den çekme (2026-11-13, issue #8):** Dosya içe aktarımının yanında ikinci giriş kapısı `importers/postman-api.ts`'tir:
+**Postman API'den çekme (2026-11-13):** Dosya içe aktarımının yanında ikinci giriş kapısı `importers/postman-api.ts`'tir:
 kullanıcının Postman API anahtarı (`X-Api-Key`) yalnızca isteğin gövdesinde yaşar (saklanmaz, loglanmaz, hata mesajına
 girmez). Envanter `GET /workspaces` → `GET /workspaces/{id}` ile workspace'e göre gruplanır; seçilen koleksiyonlar
 `GET /collections/{uid}` ile v2.1 olarak çekilip **aynı** dönüştürme hattına verilir (ayrı bir eşleme yoktur), ortamlar
@@ -623,7 +623,7 @@ tipi `is_secret`, `enabled` korunur; aynı anahtar birden fazla workspace'te →
 transaction'ında; tek öğe hatası diğerlerini durdurmaz ve `failed[]`'e düşer; anahtar reddi (401/403) bütün işlemi keser.
 429'da bir kez beklenip yeniden denenir. Çağrılar aktif proxy ve ağ ayarlarından geçer.
 
-**Export (simetri kuralı) — uygulandı (2026-11-13, issue #13):** Kendi verimiz Postman v2.1 formatında geri export edilir
+**Export (simetri kuralı) — uygulandı (2026-11-13):** Kendi verimiz Postman v2.1 formatında geri export edilir
 (`exporters/postman-v2.ts`); bu, kullanıcının verisine rehin kalmamasını (data portability) garanti eder ve import
 eşlemesinin kayıpsızlığının sınanma yoludur: import → export → import → export döngüsünde iki export (üretilen id'ler
 dışında) birebir eşit olmalıdır. Biçim: §6.2 tablosunun tersi — `info.schema` v2.1.0, klasörler iç içe `item[]`
@@ -657,7 +657,7 @@ iç transaction'lar savepoint). Paket biçimi dışa dönük sözleşmedir; alan
   IPC'ye gerek kalmaz (izin listesi boş). Kapanışta sidecar öldürülür; kabuk çökerse sidecar stdin'in
   kapandığını görüp kendini kapatır. Windows paketi (NSIS) Linux CI runner'ında `cargo-xwin` ile çapraz
   derlenir (`deploy/tauri-builder.Dockerfile`); MSI (WiX) Windows gerektirdiği için üretilmez.
-  Dinamik port, §8/2'deki oturum token'ının yerini tutmaz; o 2026-11-16'da eklendi (issue #29, aşağıda §8/2).
+  Dinamik port, §8/2'deki oturum token'ının yerini tutmaz; o 2026-11-16'da eklendi (aşağıda §8/2).
 - Yeni import formatları `importers/` altına yeni bir dosya olarak eklenir; hepsi aynı iç ara modeli üretir.
 - WebSocket/gRPC/GraphQL istek tipleri `requests.body_json.mode` ve `engine/` içinde yeni bir executor ile eklenebilir; şema değişikliği gerektirmez.
 
@@ -667,7 +667,7 @@ iç transaction'lar savepoint). Paket biçimi dışa dönük sözleşmedir; alan
 
 1. HTTP istekleri her zaman backend'den atılır (CORS ve gizlilik nedeniyle) — UI asla hedef API'ye doğrudan gitmez.
 2. Backend yalnızca `127.0.0.1`'e bind edilir; her istekte rastgele üretilmiş yerel bir oturum token'ı doğrulanır (aynı makinedeki başka süreçlerin/sitelerin API'yi kullanmasını engeller — DNS rebinding/CSRF koruması).
-   **Uygulandı (2026-11-16, issue #29, `server/src/security/localGuard.ts`)** — üç katman:
+   **Uygulandı (2026-11-16, `server/src/security/localGuard.ts`)** — üç katman:
    (a) **Host denetimi** asıl DNS rebinding korumasıdır: saldırgan alan adı 127.0.0.1'e çözülse de tarayıcı
    `Host: saldırgan.alan` yollar → 421. İzinli adlar loopback + `REQLY_ALLOWED_HOSTS`. Token tek başına yetmezdi:
    rebinding'le aynı origin olan sayfa token'ı taşıyan HTML'i de okuyabilirdi.

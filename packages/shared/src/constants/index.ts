@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS = {
   /** TLS sertifika doğrulaması; kapatılması self-signed/kurum CA'lı sunuculara izin verir (güvensiz) */
   'network.verify_tls': true,
   /**
-   * Bağlantıları istekler arasında açık tut ve yeniden kullan (keep-alive havuzu, issue #18). Kapalıyken her
+   * Bağlantıları istekler arasında açık tut ve yeniden kullan (keep-alive havuzu). Kapalıyken her
    * istek DNS + TCP + TLS'i baştan yapar (soğuk ölçüm, DNS/hosts değişikliği hemen yansır, yük dengeleyici testi).
    */
   'network.reuse_connections': true,
@@ -36,7 +36,7 @@ export const DEFAULT_SETTINGS = {
   /**
    * Masaüstü kabuğu (Tauri) açılışta yeni sürüm denetlesin mi. Uygulamanın tek dış çağrısıdır
    * (`reqly.talhacigdem.tr/updates`); gizlilik ilkesi gereği kullanıcı kapatabilir. Tarayıcıdan
-   * kullanımda etkisizdir (issue #9).
+   * kullanımda etkisizdir.
    */
   'update.auto_check': true,
 } satisfies Record<string, SettingValue>;

@@ -70,7 +70,7 @@ if (process.env.REQLY_WORKER_MODE === '1') {
 function startServer() {
   // Taşınabilir uygulama: veri exe'nin yanındaki data/ klasöründe (kullanıcı REQLY_DATA_DIR ile ezebilir)
   process.env.REQLY_DATA_DIR = process.env.REQLY_DATA_DIR || path.join(exeDir, 'data');
-  // Oturum token'ı (issue #29): sunucu her isteği bu token'la (çerez/başlık) doğrular, böylece aynı
+  // Oturum token'ı: sunucu her isteği bu token'la (çerez/başlık) doğrular, böylece aynı
   // makinedeki başka kullanıcılar ya da yerel siteler API'yi kullanamaz. Tarayıcı/kabuk adresi
   // `?reqly_token=` ile açar, sunucu çerezi kurar. Kimlik doğrulayan bir katmanın (Cloudflare Access)
   // arkasındaki Docker container'ı (deploy/Dockerfile) REQLY_AUTH=off ile kapatır.

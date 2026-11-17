@@ -156,7 +156,7 @@ export interface ScriptTestResult {
 }
 
 /**
- * Bir yürütmenin süre dökümü (issue #17). Süreler ms, 0,1 hassasiyetle. `null` = o adım bu yürütmede
+ * Bir yürütmenin süre dökümü. Süreler ms, 0,1 hassasiyetle. `null` = o adım bu yürütmede
  * olmadı ya da ölçülemedi (ör. IP adresine istekte DNS, http'de TLS, hata nedeniyle hiç gelinmeyen adım).
  * Ağ adımları yalnızca ilk bağlantıyı anlatır; yönlendirmeler `waitMs` içinde kalır, sayısı `redirects`'te.
  */
@@ -188,7 +188,7 @@ export interface ExecuteTimings {
   proxied: boolean;
   /**
    * Yeniden kullanılan bağlantı karşı taraftan kapanmıştı; idempotent istek bir kez yeni bağlantıyla
-   * yinelendi (ilk deneme `socketMs` içindedir). #18 öncesi history kayıtlarında yok.
+   * yinelendi (ilk deneme `socketMs` içindedir). Bu alan eklenmeden önceki history kayıtlarında yok.
    */
   retried?: boolean;
 }
@@ -306,7 +306,7 @@ export interface PostmanApiImportResult extends ImportReport {
   failed: ImportSkipped[];
 }
 
-/* ---------- Dışa aktarma / paylaşım paketi (issue #13) ---------- */
+/* ---------- Dışa aktarma / paylaşım paketi ---------- */
 
 /**
  * Reqly paylaşım paketi: tek dosyada birden çok koleksiyon (Postman v2.1 JSON), ortam (Postman environment
@@ -336,7 +336,7 @@ export interface ExportOptions {
   globals: { variableCount: number; secretCount: number };
 }
 
-/* ---------- cURL dönüşümü (issue #16) ---------- */
+/* ---------- cURL dönüşümü ---------- */
 
 /** cURL komutunun yazıldığı kabuk: Linux/macOS (bash/zsh) ya da Windows `cmd.exe` */
 export type CurlShell = 'bash' | 'cmd';

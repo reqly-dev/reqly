@@ -1,4 +1,4 @@
-//! Dışa aktarma indirmeleri için "Farklı kaydet" akışı (issue #23).
+//! Dışa aktarma indirmeleri için "Farklı kaydet" akışı.
 //!
 //! Frontend dosyayı tarayıcı indirmesi olarak verir (`<a download>` + blob URL); IPC kullanılmaz.
 //! `on_download` olayı senkron ve UI iş parçacığında çağrılır: içinde modal diyalog açmak WebView2'de

@@ -26,7 +26,7 @@ tauri-build = { version = "2.7", features = [] }
 tauri = { version = "2.12", features = [] }
 tauri-plugin-shell = "2.6"
 tauri-plugin-dialog = "2.8"
-# Uygulama içi güncelleme (issue #9). Yeniden başlatma için ayrı plugin gerekmez:
+# Uygulama içi güncelleme. Yeniden başlatma için ayrı plugin gerekmez:
 # tauri-plugin-process yalnızca JS tarafına `app.restart()`'ı açan ince sarmalayıcıdır, biz Rust'tan
 # doğrudan çağırıyoruz.
 tauri-plugin-updater = "2.14"

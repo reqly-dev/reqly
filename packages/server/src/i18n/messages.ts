@@ -1,5 +1,5 @@
 /**
- * Sunucudan kullanıcıya giden metinlerin tr/en sözlüğü (issue #12, 3. adım).
+ * Sunucudan kullanıcıya giden metinlerin tr/en sözlüğü.
  *
  * Anahtar → `{ tr, en }`; `{name}` biçimindeki yer tutucular `params` ile doldurulur. Türkçe
  * metinler önceki sabit metinlerle birebir aynıdır; İngilizce karşılıklar kısa ve tekniktir.
@@ -23,7 +23,7 @@ type Entry = { tr: string; en: string };
 const MESSAGES = {
   // ---- API hata gövdeleri ----
   'error.notFound': { tr: 'Bulunamadı', en: 'Not found' },
-  // ---- Yerel kapı bekçisi (security/localGuard.ts, issue #29) ----
+  // ---- Yerel kapı bekçisi (security/localGuard.ts) ----
   'security.hostRejected': {
     tr: 'Bu adresten gelen istekler kabul edilmiyor (Host başlığı izinli değil)',
     en: 'Requests for this host are not accepted (Host header not allowed)',

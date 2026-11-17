@@ -10,7 +10,7 @@ import {
 import { msg } from '../i18n/context.js';
 
 /**
- * Yapıştırılan cURL komutunu kaydedilmemiş bir istek taslağına çevirir (issue #16).
+ * Yapıştırılan cURL komutunu kaydedilmemiş bir istek taslağına çevirir.
  *
  * İki sözdizimi desteklenir: bash/zsh (Linux/macOS; `\` satır devamı, `'…'`, `"…"`, `$'…'`) ve
  * Windows `cmd.exe` (`^` satır devamı ve kaçışı, `"…"`, MSVCRT ters bölü kuralları). Chrome/Edge

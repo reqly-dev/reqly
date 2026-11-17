@@ -10,7 +10,7 @@ import {
 } from './postman-v2.js';
 
 /**
- * `.reqly.json` paylaşım paketi içe aktarımı (issue #13). Paket, `exporters/postman-v2.ts`'nin ürettiği
+ * `.reqly.json` paylaşım paketi içe aktarımı. Paket, `exporters/postman-v2.ts`'nin ürettiği
  * Postman v2.1 koleksiyon/ortam belgelerini ve global `values[]`'ı taşır; her parça mevcut Postman
  * importer'ına verilir (ayrı bir eşleme yoktur). Bütün parçalar TEK transaction'dadır: iç importer'ların
  * kendi `db.transaction` çağrıları better-sqlite3'te savepoint'e dönüşür, herhangi bir parça hata verirse

@@ -5,7 +5,7 @@ import { api } from '../api/client';
  * UI tercihlerinin (tema, bölme boyutları) sunucu tarafı: `GET /api/settings` bir kez çekilip
  * önbelleklenir, değişiklikler `PATCH /api/settings` ile yazılır. Kalıcı kaynak sunucudur;
  * `localStorage` yalnızca ilk boyama için hızlı önbellektir — Tauri kabuğu her açılışta farklı bir
- * porttan yüklediği için (yeni origin) tarayıcı depolaması boş başlayabilir (issue #7).
+ * porttan yüklediği için (yeni origin) tarayıcı depolaması boş başlayabilir.
  * Yazma hataları sessizce yutulur: tercih kaybı UI'ı bloklamaya değmez.
  */
 let settingsPromise: Promise<Settings> | null = null;

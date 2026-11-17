@@ -1,7 +1,7 @@
 /* --- Tema token'ları ---
  * Zemin/metin paleti nötr gri skaladır (koyu temada #111827 / #1f2937 / #374151).
  * Marka rengi (`--accent*`, `--highlight-*`, `--focus-ring`, `--selection-bg`) iki temada da TEK renk
- * kırmızı #d00000'dır (issue #5, kullanıcı tercihi "tek renk"). Eşik hesabı (WCAG): #d00000 beyaz metinle
+ * kırmızı #d00000'dır (kullanıcı tercihi "tek renk"). Eşik hesabı (WCAG): #d00000 beyaz metinle
  * 5.7:1 (buton/rozet), açık zeminde 5.5:1 (metin), koyu zeminde 3.1:1 — koyu zeminde yalnızca UI bileşeni
  * eşiğini (3:1) tutar; daha koyu tonlar (#af0000: 2.4:1) koyu temada okunmaz, daha açık tonlar beyaz
  * metin eşiğini kaybeder. Koyu tema varsayılandır; açık tema `html[data-theme="light"]` altında
@@ -2002,7 +2002,7 @@ kbd {
   font-size: 13px;
 }
 
-/* --- Dışa aktarma / paylaşım (issue #13) --- */
+/* --- Dışa aktarma / paylaşım --- */
 .modal.dialog.export-dialog {
   width: min(460px, 92vw);
 }
@@ -2071,7 +2071,7 @@ kbd {
   white-space: nowrap;
 }
 
-/* --- cURL (issue #16) --- */
+/* --- cURL --- */
 .curl-copy-btn {
   min-width: 34px;
   padding: 5px 8px;

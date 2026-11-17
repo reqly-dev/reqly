@@ -66,9 +66,9 @@ app.register(
  * `<html lang="en" data-theme="dark|light" data-lang="en">`. Tauri kabuğu her açılışta farklı bir
  * porttan (= farklı origin, boş localStorage) yüklediği için ilk boyamada doğru temayı/dili yalnızca
  * sunucu bilir; `index.html`'deki satır içi script bu değerleri görünce localStorage/sistem
- * tercihine bakmaz (issue #7). Dil ayarı `auto` ise `data-lang` basılmaz, istemci tarayıcı diline
- * göre karar verir (issue #12). Masaüstü kabuğunda (sidecar) `data-shell="desktop"` de basılır: frontend
- * dışa aktarmayı "Kaydet…" olarak sunar, sonucu kabuktan gelen olayla bildirir (issue #23).
+ * tercihine bakmaz. Dil ayarı `auto` ise `data-lang` basılmaz, istemci tarayıcı diline
+ * göre karar verir. Masaüstü kabuğunda (sidecar) `data-shell="desktop"` de basılır: frontend
+ * dışa aktarmayı "Kaydet…" olarak sunar, sonucu kabuktan gelen olayla bildirir.
  */
 function renderIndexHtml(template: string, theme: string, language: 'tr' | 'en' | null): string {
   const shell = process.env.REQLY_SIDECAR === '1' ? ' data-shell="desktop"' : '';

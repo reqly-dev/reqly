@@ -19,7 +19,7 @@ COPY --chown=1000:1000 Reqly /app/Reqly
 # REQLY_HOST=0.0.0.0: yerel araç varsayılanı loopback'tir; container'da dışa açılır. Önünde
 # kimlik doğrulayan bir katman (Cloudflare Access) olmalıdır. REQLY_NO_BROWSER: başlatıcı
 # tarayıcı açmaya çalışmaz. Veri /data'da (named volume). REQLY_AUTH=off: yerel oturum
-# token'ı (issue #29) kapalı — kimliği Access doğrular; Host denetimi açık kalır (REQLY_ALLOWED_HOSTS).
+# token'ı kapalı — kimliği Access doğrular; Host denetimi açık kalır (REQLY_ALLOWED_HOSTS).
 ENV REQLY_HOST=0.0.0.0 \
     REQLY_NO_BROWSER=1 \
     REQLY_AUTH=off \

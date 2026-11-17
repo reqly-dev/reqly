@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { msg } from '../i18n/context.js';
 
 /**
- * Yerel sunucunun kapı bekçisi (TASARIM.md §8/2, issue #29). Üç denetim, her istekte sırayla:
+ * Yerel sunucunun kapı bekçisi (TASARIM.md §8/2). Üç denetim, her istekte sırayla:
  *
  * 1. **Host** — yalnızca loopback adları (`127.0.0.1`, `localhost`, `[::1]`) ve `REQLY_ALLOWED_HOSTS`
  *    (virgüllü, ör. kimlik doğrulayan bir vekilin arkasındaki alan adı). DNS rebinding'e karşı asıl koruma budur:

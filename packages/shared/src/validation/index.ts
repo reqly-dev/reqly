@@ -97,7 +97,7 @@ export const settingsPatchSchema = z
   .object({
     'network.verify_tls': z.boolean().optional(),
     'network.reuse_connections': z.boolean().optional(),
-    'network.timeout_ms': z.number().int().min(0).max(600_000).optional(), // 0 = sınırsız (hata ayıklama, #24)
+    'network.timeout_ms': z.number().int().min(0).max(600_000).optional(), // 0 = sınırsız (hata ayıklama)
     'network.max_redirects': z.number().int().min(0).max(50).optional(),
     // UI tercihleri (tema, bölme boyutları) — bkz. DEFAULT_SETTINGS
     'ui.theme': z.enum(['dark', 'light']).optional(),
@@ -166,7 +166,7 @@ export const postmanApiImportSchema = z
   .strict();
 export type PostmanApiImportInput = z.infer<typeof postmanApiImportSchema>;
 
-/* ---------- Dışa aktarma (issue #13) ---------- */
+/* ---------- Dışa aktarma ---------- */
 
 /** POST /api/export/bundle gövdesi */
 export const bundleExportSchema = z

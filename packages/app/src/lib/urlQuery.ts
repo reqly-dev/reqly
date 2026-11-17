@@ -1,7 +1,7 @@
 import type { KeyValueItem } from '@reqly/shared';
 
 /**
- * URL kutusu ↔ Params tablosu eşlemesi (issue #25). Veri modeli değişmez: `draft.url`
+ * URL kutusu ↔ Params tablosu eşlemesi. Veri modeli değişmez: `draft.url`
  * query'siz taban adres, `draft.params` ayrı liste; URL kutusu ikisinden türetilir.
  * Kodlama yapılmaz: `{{var}}` ve kullanıcının yazdığı her şey aynen `key=value` olarak
  * `&` ile birleşir (gönderimde kodlamayı sunucu yapar).
