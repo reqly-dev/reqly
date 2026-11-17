@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Ana pencere yalnızca yerel açılış ekranını ve ardından sidecar'ın harici URL'sini yükler; Tauri IPC kullanılmaz, bu yüzden hiçbir izin verilmez.",
+  "windows": ["main"],
+  "permissions": []
+}

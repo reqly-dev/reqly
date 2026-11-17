@@ -1,0 +1,449 @@
+name: build
+
+# Reqly yerel bir masaüstü aracıdır; main push'u yalnızca doğrular (sunucuda önizleme yok).
+#   main push          → package: typecheck + Linux paketi + duman testi
+#   workflow_dispatch  → ek olarak desktop: Tauri Windows kurulumu (NSIS setup.exe) + aynı yükün taşınabilir
+#                        zip'i; bunlar + Linux tar.gz workflow artifact'ı olur
+#   v1.2.3 tag'i       → ek olarak desktop: setup.exe + portable zip + Linux tar.gz Gitea Release'ine eklenir
+#   v1.2.3 tag'i       → publish: desktop + mac bitince Release varlıkları public siteye yayınlanır
+#                        (özel reqly-site deposunun site-publish.sh'ı → indirme sitesi /download/<sürüm>, latest.json, yönlendirmeler)
+#   tag / dispatch     → mac: Gitea'ya kayıtlı self-hosted Apple Silicon Mac runner'ında (etiket macos-arm64,
+#                        host kabuğu, container yok) iki dmg (aarch64 + x64, imzasız/ad-hoc). Mac kapalıysa iş
+#                        kuyrukta bekler, diğer paketler beklemez; dmg'ler Release'e sonradan eklenir (issue #10).
+# Linux paketi her koşuda gerçekten çalıştırılıp duman testinden geçirilir (launcher/smoke.mjs; Tauri
+# sidecar sözleşmesi dahil): projenin tek otomatik uçtan uca testi budur. Windows, Tauri NSIS kurulumu
+# ve kurulumun yükünü aynen içeren taşınabilir zip (deploy/win-portable.sh; exe indirmeyi engelleyen
+# kurumsal ağlar için) olarak dağıtılır; eski win-x64 launcher zip'i yok. Linux için tar.gz
+# (sunucu/headless kullanım) kalır. Linux Tauri paketi (deb/AppImage) ŞİMDİLİK üretilmez.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node sürümü .nvmrc'den: SEA blob'u ve native modül ABI'si indirilen Node ikilisiyle
+      # aynı sürümden üretilmek zorunda (launcher/package.mjs bunu ayrıca denetler).
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Sürümü belirle
+        id: meta
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-dev.$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bağımlılıklar
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Linux paketi
+        run: node launcher/package.mjs --target linux-x64 --version "${{ steps.meta.outputs.version }}"
+
+      - name: Duman testi (paketlenmiş ikili)
+        run: node launcher/smoke.mjs dist/package/linux-x64/Reqly/reqly
+
+      - name: Paket özeti
+        run: ls -la dist/
+
+      # Tag / elle tetiklemede: duman testinden geçen tar.gz'nin kendisi desktop job'una aktarılır
+      # (Release'e/artifact'a giden Linux paketi test edilenle birebir aynı dosya olsun diye yeniden
+      # üretilmez). v4 Gitea'da çalışmaz ("not supported on GHES", koşu 184); v3 Gitea artifact API'siyle uyumlu.
+      - uses: actions/upload-artifact@v3
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+        with:
+          name: linux-tarball
+          path: dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Özet
+        run: |
+          echo "Sürüm: ${{ steps.meta.outputs.version }}"
+          if [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            echo "main koşusu: typecheck + duman testi geçti."
+          else
+            echo "Linux tar.gz desktop job'una aktarıldı (artifact linux-tarball)."
+          fi
+
+  # --- Tauri masaüstü paketi (Windows NSIS kurulumu) — yalnızca tag / elle tetikleme ---
+  # Release adımı da burada: üç dosya (setup.exe + portable zip + tar.gz) tek yerde toplanır, Windows derlemesi
+  # düşerse yarım (yalnızca Linux'lu) bir Release oluşmaz.
+  desktop:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Job container'ında act varsayılan olarak `sh -e` kullanır; adımlar `set -o pipefail` ve `[[` ile
+    # bash ister (koşu 210: "set: Illegal option -o pipefail").
+    defaults:
+      run:
+        shell: bash
+    # Rust + cargo-xwin (Windows SDK önbelleği imajda) + NSIS 3.11 + Node (.nvmrc) içeren derleme imajı
+    # (deploy/tauri-builder.Dockerfile, builder-image.yml basar). İmajı host daemon'ı çeker:
+    # "localhost:3000" orada Gitea'dır, job container'ının ağ çözümlemesi burada devrede değildir.
+    # force_pull=false olduğundan imaj host'ta zaten varsa çekilmez bile; yoksa (ya da yerel kopya
+    # silinmişse) çekim registry'ye kimlikle gider — paket gizli olabilir, bu yüzden credentials verilir
+    # (builder-image.yml'in imajı bastığı REGISTRY_* secret'ları). act job container'ında kullanıcı root'tur.
+    container:
+      image: localhost:3000/mtcsrv/reqly-tauri-builder:latest
+      credentials:
+        username: ${{ secrets.REGISTRY_USER }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # version: sidecar build-info'su için package job'unun sürümü (tag'de 1.2.3, dispatch'te
+      #   0.0.0-dev.<sha7>; izlenebilirlik).
+      # app_version: Tauri/NSIS sürümü. Tag'de tag sürümü; dispatch'te 0.0.0-dev.<sha> NSIS'in
+      #   x.y.z.w sürüm alanı ve semver önsürüm kısıtlarıyla sorun çıkarabileceği için package.json
+      #   sürümü kullanılır (dosya adı Reqly_<package.json sürümü>_x64-setup.exe olur; yalnızca artifact).
+      - name: Sürümü belirle
+        id: meta
+        env:
+          VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "app_version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "app_version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+          fi
+          node -v && cargo --version && makensis -VERSION
+
+      - name: Bağımlılıklar
+        run: npm ci --no-audit --no-fund
+
+      # Cargo önbelleği: yalnızca derlenmiş bağımlılıklar (host'ta koşan build script/proc-macro'lar
+      # target/release altında, Windows hedefi target/x86_64-pc-windows-msvc/release altında) ve
+      # registry indeksi/arşivleri. bundle/ (setup.exe, NSIS ara dosyaları) önbelleğe girmez.
+      # CARGO_HOME imajda /usr/local/cargo; registry orada imajla boş gelir. xwin SDK'sı imajda (/opt/xwin).
+      - uses: actions/cache@v3
+        with:
+          path: |
+            /usr/local/cargo/registry/index
+            /usr/local/cargo/registry/cache
+            /usr/local/cargo/git/db
+            src-tauri/target/release/build
+            src-tauri/target/release/deps
+            src-tauri/target/release/.fingerprint
+            src-tauri/target/x86_64-pc-windows-msvc/release/build
+            src-tauri/target/x86_64-pc-windows-msvc/release/deps
+            src-tauri/target/x86_64-pc-windows-msvc/release/.fingerprint
+          key: cargo-win-${{ hashFiles('src-tauri/Cargo.lock') }}
+          restore-keys: cargo-win-
+
+      # Sidecar: Windows SEA ikilisi → src-tauri/binaries/reqly-server-x86_64-pc-windows-msvc.exe,
+      # resources/ → src-tauri/resources/. Frontend'i (vite) package.mjs kendisi derler, package
+      # job'undaki gibi (--skip-app-build yok; @reqly/shared'in build'i yalnızca tsc --noEmit'tir).
+      - name: Windows sidecar
+        run: node launcher/package.mjs --target win-x64 --version "${{ steps.meta.outputs.version }}" --sidecar-dir src-tauri --no-archive
+
+      # --config inline JSON tauri.conf.json'daki version'ı (../package.json) ezer.
+      # Updater imzası: TAURI_SIGNING_PRIVATE_KEY secret'ı (kullanıcı yazdı); anahtar parolasız, PASSWORD boş string
+      # (Gitea boş secret kabul etmediği için env'de). Secret yoksa tauri build .sig üretmez (createUpdaterArtifacts).
+      - name: Tauri Windows kurulumu (NSIS)
+        env:
+          APP_VERSION: ${{ steps.meta.outputs.app_version }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: |
+          set -euo pipefail
+          npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc \
+            --config "{\"version\":\"${APP_VERSION}\"}"
+          exe="src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Reqly_${APP_VERSION}_x64-setup.exe"
+          test -f "${exe}" || { echo "Kurulum dosyası yok: ${exe}"; ls -la src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/ || true; exit 1; }
+          mkdir -p dist && cp "${exe}" dist/
+          # Updater imzası (createUpdaterArtifacts): setup.exe.sig; yoksa build zaten hata verir
+          test -f "${exe}.sig" && cp "${exe}.sig" dist/ || echo "UYARI: .sig yok, updater bu sürümü kabul etmez"
+
+      # Aynı yükten (reqly.exe + sidecar + resources/) kurulumsuz zip; imajda `zip` var.
+      - name: Taşınabilir Windows zip'i
+        env:
+          APP_VERSION: ${{ steps.meta.outputs.app_version }}
+        run: bash deploy/win-portable.sh "${APP_VERSION}" dist
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: linux-tarball
+          path: dist
+
+      - name: Paket özeti
+        run: ls -la dist/
+
+      # Yalnızca elle tetiklemede: iki dosya artifact olur (tag'de Release zaten tutar).
+      - uses: actions/upload-artifact@v3
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: reqly-${{ steps.meta.outputs.version }}
+          path: |
+            dist/*.exe
+            dist/*.zip
+            dist/*.tar.gz
+          retention-days: 14
+
+      # Sürüm tag'inde Gitea Release oluşturulup paketler eklenir. Job container'ı Gitea'nın
+      # ağındadır (gitea:3000); public adres Cloudflare'in 100 MB gövde sınırına takılabilir.
+      # Token: varsa RELEASE_TOKEN secret'ı, yoksa job'un kendi GITHUB_TOKEN'ı.
+      - name: Gitea Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITEA_API: http://gitea:3000/api/v1/repos/${{ github.repository }}
+          TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+          VERSION: ${{ steps.meta.outputs.app_version }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          auth=(-H "Authorization: token ${TOKEN}")
+          # Aynı tag için release zaten varsa onu kullan (yeniden koşturma güvenli)
+          release_id=$(curl -fsS "${auth[@]}" "${GITEA_API}/releases/tags/${TAG}" 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])' || true)
+          if [[ -z "${release_id}" ]]; then
+            release_id=$(curl -fsS "${auth[@]}" -H 'Content-Type: application/json' \
+              -X POST "${GITEA_API}/releases" \
+              -d "$(python3 -c 'import json,sys; v=sys.argv[2]; print(json.dumps({"tag_name": sys.argv[1], "name": "Reqly " + v, "body": "Windows: Reqly_" + v + "_x64-setup.exe (kurulum; WebView2 yoksa indirir) ya da Reqly_" + v + "_x64-portable.zip (kurulumsuz: açıp Reqly\\reqly.exe dosyasını çalıştırın; WebView2 kurulu olmalı). Linux/sunucu: Reqly-" + v + "-linux-x64.tar.gz. macOS: Reqly_" + v + "_aarch64.dmg (Apple Silicon) ya da Reqly_" + v + "_x64.dmg (Intel); imzasizdir, ilk acilista Sistem Ayarlari > Gizlilik ve Guvenlik > Yine de Ac (Mac runner cevrimdisiysa dmg dosyalari sonradan eklenir).", "draft": False, "prerelease": "-" in v}))' "${TAG}" "${VERSION}")" \
+              | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
+            echo "Release oluşturuldu: id=${release_id}"
+          else
+            echo "Mevcut release kullanılıyor: id=${release_id}"
+          fi
+          shopt -s nullglob
+          for f in dist/*.exe dist/*.zip dist/*.tar.gz dist/*.sig; do
+            echo "Ekleniyor: $f"
+            curl -fsS "${auth[@]}" -X POST "${GITEA_API}/releases/${release_id}/assets?name=$(basename "$f")" \
+              -F "attachment=@${f}" -o /dev/null
+          done
+          echo "Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${TAG}"
+
+      - name: Özet
+        run: |
+          echo "Sürüm: ${{ steps.meta.outputs.app_version }} (sidecar ${{ steps.meta.outputs.version }})"
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "Paketler Gitea Release'ine eklendi."
+          else
+            echo "Paketler bu koşunun artifact'ında (reqly-${{ steps.meta.outputs.version }})."
+          fi
+
+  # macOS paketleri: self-hosted Mac runner (kullanıcının Apple Silicon Mac'i, act_runner, etiket macos-arm64:host).
+  # Container yok, adımlar Mac'in kendi kabuğunda koşar; nvm ile .nvmrc Node'u, rustup ile iki hedef, Xcode CLT
+  # (codesign/hdiutil) kurulu olmalı (kurulum adımları issue #10). x64 paketi aynı Mac'te çapraz derlenir:
+  # Rust x86_64-apple-darwin hedefi + isolated-vm'in x64 ön-derlemesi node-gyp ile burada üretilir (npm paketinde yok).
+  # Release yüklemesi public adresten gider (Mac Gitea'nın Docker ağında değil); dmg ~50 MB < Cloudflare 100 MB.
+  mac:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: macos-arm64
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sürümü belirle
+        id: meta
+        env:
+          VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "app_version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "app_version=$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')" >> "$GITHUB_OUTPUT"
+          fi
+
+      # nvm kullanıcı kabuğundan gelir (brew nvm ya da ~/.nvm); .nvmrc sürümü yoksa kurar. Sonraki adımlar PATH'i
+      # GITHUB_PATH ile alır. Rust: rustup'ın ~/.cargo/bin'i.
+      - name: Araçlar (nvm, rustup, Xcode CLT)
+        run: |
+          set -euo pipefail
+          export NVM_DIR="$HOME/.nvm"
+          if [[ -s "$NVM_DIR/nvm.sh" ]]; then . "$NVM_DIR/nvm.sh"; else . "$(brew --prefix nvm)/nvm.sh"; fi
+          nvm install "$(cat .nvmrc)" >/dev/null
+          nvm use "$(cat .nvmrc)" >/dev/null
+          echo "$(dirname "$(nvm which current)")" >> "$GITHUB_PATH"
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin >/dev/null
+          node -v && cargo --version && xcode-select -p && uname -m
+
+      - name: Bağımlılıklar
+        run: npm ci --no-audit --no-fund
+
+      - name: Frontend
+        run: npm run build -w @reqly/app
+
+      - name: Sidecar planı
+        run: |
+          node launcher/package.mjs --target darwin-arm64 --plan
+          node launcher/package.mjs --target darwin-x64 --plan || true
+
+      - name: Sidecar darwin-arm64
+        run: node launcher/package.mjs --target darwin-arm64 --version "${{ steps.meta.outputs.version }}" --sidecar-dir src-tauri --no-archive --skip-app-build
+
+      - name: Tauri macOS (aarch64)
+        env:
+          APP_VERSION: ${{ steps.meta.outputs.app_version }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: |
+          set -euo pipefail
+          npx tauri build --target aarch64-apple-darwin --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\"}"
+          mkdir -p dist
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg dist/
+          # Updater paketi (createUpdaterArtifacts, yalnızca `app` bundle türünde üretilir → --bundles app,dmg): Reqly.app.tar.gz + .sig → mimari adıyla dist/
+          up="src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Reqly.app.tar.gz"
+          test -f "$up" && cp "$up" "dist/Reqly_${APP_VERSION}_aarch64.app.tar.gz" && cp "$up.sig" "dist/Reqly_${APP_VERSION}_aarch64.app.tar.gz.sig" || echo "UYARI: updater paketi yok (aarch64)"
+          ls -la dist/
+
+      # isolated-vm'in darwin-x64 ön-derlemesi yok: aynı Mac'te x64 için derlenir ve package.mjs'in beklediği
+      # prebuilds/darwin-x64/ dizinine ABI numarasıyla konur (betik derleme yapmaz, oradan kopyalar).
+      - name: isolated-vm x64 derlemesi
+        run: |
+          set -euo pipefail
+          abi=$(node -p 'process.versions.modules')
+          ( cd node_modules/isolated-vm && npx node-gyp rebuild --release --arch=x64 -j max )
+          mkdir -p "node_modules/isolated-vm/prebuilds/darwin-x64"
+          # node-gyp çıktısının adı binding.gyp'teki hedef adıdır (isolated_vm.node, alt çizgili); glob ile al
+          built=$(ls node_modules/isolated-vm/build/Release/isolated*vm.node | head -1)
+          cp "$built" "node_modules/isolated-vm/prebuilds/darwin-x64/isolated-vm.abi${abi}.node"
+          rm -rf node_modules/isolated-vm/build
+          file "node_modules/isolated-vm/prebuilds/darwin-x64/isolated-vm.abi${abi}.node"
+
+      - name: Sidecar darwin-x64
+        run: node launcher/package.mjs --target darwin-x64 --version "${{ steps.meta.outputs.version }}" --sidecar-dir src-tauri --no-archive --skip-app-build
+
+      - name: Tauri macOS (x64)
+        env:
+          APP_VERSION: ${{ steps.meta.outputs.app_version }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        run: |
+          set -euo pipefail
+          npx tauri build --target x86_64-apple-darwin --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\"}"
+          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg dist/
+          # Updater paketi (createUpdaterArtifacts, yalnızca `app` bundle türünde üretilir → --bundles app,dmg): Reqly.app.tar.gz + .sig → mimari adıyla dist/
+          up="src-tauri/target/x86_64-apple-darwin/release/bundle/macos/Reqly.app.tar.gz"
+          test -f "$up" && cp "$up" "dist/Reqly_${APP_VERSION}_x64.app.tar.gz" && cp "$up.sig" "dist/Reqly_${APP_VERSION}_x64.app.tar.gz.sig" || echo "UYARI: updater paketi yok (x64)"
+          ls -la dist/
+
+      - uses: actions/upload-artifact@v3
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: reqly-mac-${{ steps.meta.outputs.version }}
+          path: |
+            dist/*.dmg
+            dist/*.app.tar.gz
+            dist/*.sig
+          retention-days: 14
+
+      # Aynı tag için release'i desktop job'u oluşturmuş olabilir; yoksa burada oluşturulur.
+      - name: Gitea Release (dmg)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GITEA_API: ${{ github.server_url }}/api/v1/repos/${{ github.repository }}
+          TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+          VERSION: ${{ steps.meta.outputs.app_version }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          auth=(-H "Authorization: token ${TOKEN}")
+          release_id=$(curl -fsS "${auth[@]}" "${GITEA_API}/releases/tags/${TAG}" 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])' || true)
+          if [[ -z "${release_id}" ]]; then
+            release_id=$(curl -fsS "${auth[@]}" -H 'Content-Type: application/json' \
+              -X POST "${GITEA_API}/releases" \
+              -d "$(python3 -c 'import json,sys; v=sys.argv[2]; print(json.dumps({"tag_name": sys.argv[1], "name": "Reqly " + v, "body": "macOS: Reqly_" + v + "_aarch64.dmg (Apple Silicon) ya da Reqly_" + v + "_x64.dmg (Intel); imzasizdir, ilk acilista Sistem Ayarlari > Gizlilik ve Guvenlik > Yine de Ac. Windows/Linux paketleri desktop isinden eklenir.", "draft": False, "prerelease": "-" in v}))' "${TAG}" "${VERSION}")" \
+              | python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])')
+            echo "Release oluşturuldu: id=${release_id}"
+          else
+            echo "Mevcut release kullanılıyor: id=${release_id}"
+          fi
+          shopt -s nullglob   # eşleşmeyen desen (ör. .sig yoksa) döngüye düz metin olarak girmesin
+          for f in dist/*.dmg dist/*.app.tar.gz dist/*.sig; do
+            echo "Ekleniyor: $f"
+            curl -fsS "${auth[@]}" -X POST "${GITEA_API}/releases/${release_id}/assets?name=$(basename "$f")" \
+              -F "attachment=@${f}" -o /dev/null
+          done
+
+  # Public siteye yayın: Release'teki dosyalar reqly.talhacigdem.tr/download/<sürüm>/ altına kopyalanır,
+  # latest.json ve /download/latest/<platform> yönlendirmeleri yenilenir (reqly-site deposunun site-publish.sh'ı; runner'ın
+  # host docker.sock'u ile reqly-site container'ına docker cp). İki iş: `publish` Windows/Linux biter bitmez
+  # yayınlar (Mac'i beklemez; Mac runner çevrimdışıyken rc.18 sitede hiç görünmemişti), `publish-mac` Mac işi
+  # bitince yeniden koşar ve dmg'leri/updater girişlerini ekler. Betik idempotent: o an Release'te olan her şeyi
+  # yayınlar, eksik varlığı atlar. Elle: GITEA_TOKEN=... reqly-site/site-publish.sh <sürüm>
+  publish:
+    needs: [package, desktop]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: reqly-site'ı klonla (site-publish.sh)
+        env:
+          INFRA_USER: ${{ secrets.REGISTRY_USER }}
+          INFRA_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Sunucu betikleri özel depoda (açık kaynak deposunda iç altyapı yok). Token URL'ye gömülmez.
+          git -c credential.helper='!f() { echo "username=${INFRA_USER}"; echo "password=${INFRA_TOKEN}"; }; f' \
+            clone --depth 1 http://gitea:3000/mtcsrv/reqly-site.git site-repo
+      - name: Siteye yayınla
+        env:
+          GITEA_API: http://gitea:3000/api/v1/repos/${{ github.repository }}
+          GITEA_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+          GITEA_USER: ${{ github.actor }}
+          VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$(docker ps -q -f name='^reqly-site$')" ]]; then echo "reqly-site container'ı yok, yayın atlandı"; exit 0; fi
+          bash site-repo/site-publish.sh "${VERSION}"
+          echo "https://reqly.talhacigdem.tr/download/latest/"
+
+  publish-mac:
+    needs: [package, mac]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: reqly-site'ı klonla (site-publish.sh)
+        env:
+          INFRA_USER: ${{ secrets.REGISTRY_USER }}
+          INFRA_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Sunucu betikleri özel depoda (açık kaynak deposunda iç altyapı yok). Token URL'ye gömülmez.
+          git -c credential.helper='!f() { echo "username=${INFRA_USER}"; echo "password=${INFRA_TOKEN}"; }; f' \
+            clone --depth 1 http://gitea:3000/mtcsrv/reqly-site.git site-repo
+      - name: Siteye yayınla (Mac dosyalarıyla)
+        env:
+          GITEA_API: http://gitea:3000/api/v1/repos/${{ github.repository }}
+          GITEA_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+          GITEA_USER: ${{ github.actor }}
+          VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$(docker ps -q -f name='^reqly-site$')" ]]; then echo "reqly-site container'ı yok, yayın atlandı"; exit 0; fi
+          bash site-repo/site-publish.sh "${VERSION}"
+          echo "https://reqly.talhacigdem.tr/download/latest/"

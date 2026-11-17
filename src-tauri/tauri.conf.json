@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Reqly",
+  "version": "../package.json",
+  "identifier": "tr.talhacigdem.reqly",
+  "build": {
+    "frontendDist": "ui"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "create": false,
+        "title": "Reqly",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 600,
+        "center": true,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "category": "DeveloperTool",
+    "shortDescription": "Yerel, hafif API istemcisi",
+    "longDescription": "Tamamen yerel çalışan, hafif ve veri gizliliği odaklı Postman alternatifi.",
+    "publisher": "Talha Çiğdem",
+    "copyright": "© Talha Çiğdem",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "externalBin": ["binaries/reqly-server"],
+    "resources": ["resources"]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEI5MzMzMTc2NjFGQTU1OUIKUldTYlZmcGhkakV6dVR6UitxeDV5VXRBazFqQ01hWTFyWlZqTXBqRnlHTXhXVDNzRjR2Y3d0bHMK",
+      "requireSignedVersion": true,
+      "endpoints": [
+        "https://reqly.talhacigdem.tr/updates/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

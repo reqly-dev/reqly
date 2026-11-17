@@ -1,0 +1,40 @@
+{
+  "name": "reqly",
+  "private": true,
+  "version": "1.0.0-rc.18",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reqly-dev/reqly.git"
+  },
+  "homepage": "https://reqly.talhacigdem.tr",
+  "description": "Tamamen yerel çalışan, hafif ve veri gizliliği odaklı API istemcisi",
+  "workspaces": [
+    "packages/shared",
+    "packages/server",
+    "packages/app"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:server dev:app",
+    "dev:server": "npm run dev -w @reqly/server",
+    "dev:app": "npm run dev -w @reqly/app",
+    "build": "npm run build -w @reqly/shared && npm run build -w @reqly/server && npm run build -w @reqly/app",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "start": "npm run build -w @reqly/app && npm run start -w @reqly/server",
+    "package:linux": "node launcher/package.mjs --target linux-x64",
+    "sidecar:win": "node launcher/package.mjs --target win-x64 --sidecar-dir src-tauri --no-archive",
+    "sidecar:linux": "node launcher/package.mjs --target linux-x64 --sidecar-dir src-tauri --no-archive",
+    "portable:win": "deploy/win-portable.sh",
+    "release": "deploy/surum.sh",
+    "smoke": "node launcher/smoke.mjs dist/package/linux-x64/Reqly/reqly",
+    "tauri": "tauri",
+    "notices": "node launcher/third-party-notices.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.4",
+    "adm-zip": "^0.5.16",
+    "esbuild": "^0.28.0",
+    "npm-run-all": "^4.1.5",
+    "postject": "^1.0.0-alpha.6"
+  }
+}

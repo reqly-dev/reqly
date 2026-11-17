@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reqly</title>
+    <!-- Tema ilk boyamadan önce: sunucu data-theme'i basmışsa (paketlenmiş/start modu, kayıtlı ayar) o kazanır;
+         yoksa lib/theme.ts ile aynı kural (localStorage önbelleği → sistem → koyu) -->
+    <script>
+      (function () {
+        var t = document.documentElement.dataset.theme || null;
+        if (t !== 'light' && t !== 'dark') {
+          try {
+            t = localStorage.getItem('reqly.theme');
+          } catch (e) {}
+        }
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        document.documentElement.dataset.theme = t;
+        // Dil: sunucu data-lang basmışsa (kayıtlı ayar auto değil) o; yoksa localStorage önbelleği
+        // (lib/i18n.ts'teki ui.language kopyası: auto|tr|en), o da yoksa tarayıcı dili
+        var l = document.documentElement.dataset.lang || null;
+        if (l !== 'tr' && l !== 'en') {
+          try {
+            l = localStorage.getItem('reqly.language');
+          } catch (e) {}
+        }
+        if (l !== 'tr' && l !== 'en') {
+          l = (navigator.language || '').toLowerCase().indexOf('tr') === 0 ? 'tr' : 'en';
+        }
+        document.documentElement.lang = l;
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,2131 @@
+/* --- Tema token'ları ---
+ * Zemin/metin paleti nötr gri skaladır (koyu temada #111827 / #1f2937 / #374151).
+ * Marka rengi (`--accent*`, `--highlight-*`, `--focus-ring`, `--selection-bg`) iki temada da TEK renk
+ * kırmızı #d00000'dır (issue #5, kullanıcı tercihi "tek renk"). Eşik hesabı (WCAG): #d00000 beyaz metinle
+ * 5.7:1 (buton/rozet), açık zeminde 5.5:1 (metin), koyu zeminde 3.1:1 — koyu zeminde yalnızca UI bileşeni
+ * eşiğini (3:1) tutar; daha koyu tonlar (#af0000: 2.4:1) koyu temada okunmaz, daha açık tonlar beyaz
+ * metin eşiğini kaybeder. Koyu tema varsayılandır; açık tema `html[data-theme="light"]` altında
+ * aynı değişkenleri yeniden tanımlar (lib/theme.ts yazar).
+ * Semantik renkler (metot/durum rozetleri, uyarı, hata) ilgili
+ * arka planlarda en az 4.5:1 kontrast verecek tonlardan seçildi. Hata kırmızısı (`--red`,
+ * `--danger-bg`, `--var-unknown-bg`) accent ile karışmasın diye turuncuya kaydırılmıştır. */
+@font-face {
+  font-family: 'Inter var';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter var';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/InterVariable-Italic.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #111827;
+  --bg-panel: #1f2937;
+  --bg-elevated: #374151;
+  --bg-input: #111827;
+  --bg-overlay: #1f2937;
+  --border: #424b57;
+  --border-input: #424b57;
+  --text: rgba(255, 255, 255, 0.87);
+  --text-dim: rgba(255, 255, 255, 0.6);
+  --accent: #d00000;
+  --accent-hover: #e52020;
+  --accent-text: #ffffff;
+  --highlight-bg: rgba(208, 0, 0, 0.2);
+  --highlight-text: rgba(255, 255, 255, 0.87);
+  --hover: rgba(255, 255, 255, 0.03);
+  --focus-ring: 0 0 0 0.2rem rgba(208, 0, 0, 0.35);
+  --selection-bg: rgba(208, 0, 0, 0.3);
+  --search-match-bg: rgba(238, 193, 55, 0.25);
+  --shadow: 0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14),
+    0 9px 46px 8px rgba(0, 0, 0, 0.12);
+  --mask: rgba(0, 0, 0, 0.4);
+  --scrollbar: #4b5563;
+  --danger-bg: #ff8f6b;
+  --danger-text: #030712;
+  /* semantik: renk skalalarının 300–400 tonları */
+  --green: #4cd07d;
+  --yellow: #eec137;
+  --orange: #fba86f;
+  --red: #ff8f6b;
+  --purple: #c996fa;
+  --blue: #85b2f9;
+  --var-known-bg: rgba(76, 208, 125, 0.14);
+  --var-unknown-bg: rgba(255, 143, 107, 0.14);
+  --radius: 6px;
+  font-size: 14px;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f9fafb;
+  --bg-panel: #ffffff;
+  --bg-elevated: #f3f4f6;
+  --bg-input: #ffffff;
+  --bg-overlay: #ffffff;
+  --border: #dfe7ef;
+  --border-input: #d1d5db;
+  --text: #4b5563;
+  --text-dim: #6b7280;
+  --accent: #d00000;
+  --accent-hover: #b00000;
+  --accent-text: #ffffff;
+  --highlight-bg: #fbe9e9;
+  --highlight-text: #8a0000;
+  --hover: #f6f9fc;
+  --focus-ring: 0 0 0 0.2rem #f0b3b3;
+  --selection-bg: rgba(208, 0, 0, 0.18);
+  --search-match-bg: rgba(234, 179, 8, 0.3);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --mask: rgba(0, 0, 0, 0.4);
+  --scrollbar: #d1d5db;
+  --danger-bg: #c43a1c;
+  --danger-text: #ffffff;
+  /* semantik: beyaz/gri-50 üstünde ≥4.5:1 için 700–800 tonları */
+  --green: #136c34;
+  --yellow: #816204;
+  --orange: #ae510f;
+  --red: #c43a1c;
+  --purple: #763cad;
+  --blue: #295bac;
+  --var-known-bg: rgba(29, 167, 80, 0.12);
+  --var-unknown-bg: rgba(196, 58, 28, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Belge kaydırılmaz: yalnızca paneller kendi içinde kayar. WebView2'de (Windows) belge seviyesindeki
+   lastik bant/overscroll üst barın üstünde boşluk açıyordu (kullanıcı geri bildirimi, 2026-11-14). */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: 'Inter var', system-ui, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+/* lucide ikonları: metinle hizalı, daralmaz, rengi currentColor'dan alır */
+svg.lucide {
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius);
+  padding: 5px 8px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--accent);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
+}
+
+input[type='checkbox']:focus,
+input[type='radio']:focus {
+  box-shadow: none;
+}
+
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+::placeholder {
+  color: var(--text-dim);
+  opacity: 1;
+}
+
+/* --- Kaydırma çubukları (tema) ---
+ * Chromium/Edge/WebView2/Safari: ::-webkit-scrollbar. Chromium 121+ standart
+ * scrollbar-width/scrollbar-color tanımlıysa ::-webkit-scrollbar'ı yok sayar; bu yüzden
+ * standart özellikler yalnızca ::-webkit-scrollbar'ı tanımayan motorlarda (Firefox) uygulanır. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar) transparent;
+  }
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* --- Üst bar --- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  margin-right: 8px;
+  color: var(--accent);
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* Yalnızca simge taşıyan üst bar butonları (ayarlar, proxy, tema, yardım) aynı genişlikte */
+.ghost-btn.icon-only {
+  position: relative;
+  width: 32px;
+  padding: 7px 0;
+}
+
+.env-menu-label {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+/* Aktif proxy göstergesi: simgenin köşesinde küçük accent nokta */
+.proxy-dot {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 1px solid var(--bg-panel);
+}
+
+/* --- Açılır menü (components/DropdownMenu.tsx) --- */
+.dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.dropdown-caret {
+  display: inline-flex;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  min-width: 180px;
+  max-width: 320px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-overlay);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 12;
+}
+
+.dropdown-menu.align-right {
+  right: 0;
+}
+
+.dropdown-menu.align-left {
+  left: 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 4px;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.dropdown-item:not(:disabled):hover,
+.dropdown-item:focus-visible {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  box-shadow: none;
+}
+
+.dropdown-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.dropdown-item[aria-checked='true'] {
+  font-weight: 600;
+}
+
+.dropdown-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.dropdown-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-separator {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--border);
+}
+
+/* --- Yerleşim --- */
+.layout {
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar {
+  height: 100%;
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.main {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.request-response-split {
+  flex: 1;
+  min-height: 0;
+}
+
+/* --- Sürüklenebilir bölmeler (SplitPane) --- */
+.split-pane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+.split-row {
+  flex-direction: row;
+}
+
+.split-column {
+  flex-direction: column;
+}
+
+.split-first {
+  flex-grow: 0;
+  flex-shrink: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.split-second {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.splitter {
+  flex: 0 0 6px;
+  background: linear-gradient(var(--border), var(--border)) center / 1px 100% no-repeat;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+
+.split-column > .splitter {
+  background-size: 100% 1px;
+  cursor: row-resize;
+}
+
+.splitter:hover,
+.splitter:focus-visible,
+.split-dragging > .splitter {
+  background: var(--accent);
+}
+
+.split-dragging,
+.split-dragging * {
+  user-select: none;
+}
+
+.split-row.split-dragging,
+.split-row.split-dragging * {
+  cursor: col-resize;
+}
+
+.split-column.split-dragging,
+.split-column.split-dragging * {
+  cursor: row-resize;
+}
+
+/* --- Sekmeler --- */
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  padding: 0 8px;
+}
+
+.tab {
+  padding: 8px 12px;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tab:hover {
+  color: var(--text);
+  border-bottom-color: var(--border);
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* --- Butonlar --- */
+.ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius);
+  color: var(--text);
+  background: transparent;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.ghost-btn:not(:disabled):hover {
+  background: var(--hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.full-width {
+  width: calc(100% - 16px);
+  margin: 8px;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  color: var(--text-dim);
+  border-radius: 4px;
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  background: var(--bg-elevated);
+}
+
+.icon-btn:focus-visible {
+  box-shadow: none;
+  outline: 1px solid var(--accent);
+}
+
+.send-btn {
+  background: var(--accent);
+  color: var(--accent-text);
+  border: 1px solid var(--accent);
+  padding: 6px 18px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.send-btn:not(:disabled):hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.send-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+/* --- Koleksiyon ağacı --- */
+.collections-panel,
+.history-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 12px;
+}
+
+.tree-node {
+  user-select: none;
+}
+
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  /* Hover'da beliren satır butonları (20 px) satırı zıplatmasın */
+  min-height: 26px;
+  cursor: pointer;
+}
+
+.tree-row:hover {
+  background: var(--hover);
+}
+
+/* Gizliyken yer kaplamaz (visibility değil display): uzun adlar yalnızca hover'da kısalır */
+.tree-row .row-actions {
+  display: none;
+}
+
+.tree-row:hover .row-actions,
+.tree-row:focus-within .row-actions {
+  display: flex;
+}
+
+.tree-label {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Flex kapsayıcıdaki çıplak metin "…" almaz, kesilir; ad ayrı öğede kısaltılır (tam ad title'da) */
+.tree-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collection-row .tree-label {
+  font-weight: 600;
+}
+
+.expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  width: 16px;
+  padding: 0;
+}
+
+.tree-children {
+  padding-left: 16px;
+}
+
+.request-row.active {
+  background: var(--highlight-bg);
+  color: var(--highlight-text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.method-tag {
+  font-size: 10px;
+  font-weight: 700;
+  width: 44px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.method-GET { color: var(--green); }
+.method-POST { color: var(--yellow); }
+.method-PUT { color: var(--blue); }
+.method-PATCH { color: var(--purple); }
+.method-DELETE { color: var(--red); }
+.method-HEAD, .method-OPTIONS { color: var(--text-dim); }
+
+/* --- Request builder --- */
+.request-builder {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.request-name-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.request-name {
+  flex: 1;
+  background: transparent;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.request-name:hover {
+  border-color: var(--border-input);
+  background: var(--bg-input);
+}
+
+.request-name:focus {
+  border-color: var(--accent);
+  background: var(--bg-input);
+}
+
+.url-row {
+  display: flex;
+  gap: 8px;
+}
+
+.method-select {
+  font-weight: 700;
+  width: 105px;
+}
+
+.url-input {
+  flex: 1;
+  font-family: Consolas, monospace;
+}
+
+/* Sekme içeriği istek panelinin kalan yüksekliğini alır. Editörlü sekmelerde (raw body,
+ * scripts) alan editöre verilir ve tek scroll CodeMirror'ınkidir; diğerlerinde içerik
+ * uzarsa tab-content'in kendisi kayar. */
+.tab-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- KeyValue editörü --- */
+.kv-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.kv-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.kv-key {
+  width: 220px;
+}
+
+.kv-value {
+  flex: 1;
+}
+
+/* Listenin altındaki boş "hayalet" satır: yazılınca gerçek satıra dönüşür */
+.kv-row.kv-ghost {
+  opacity: 0.55;
+}
+
+.kv-row.kv-ghost:focus-within {
+  opacity: 1;
+}
+
+.kv-row.kv-ghost input[type='checkbox'],
+.kv-row.kv-ghost .icon-btn {
+  visibility: hidden;
+}
+
+/* --- Body / Auth --- */
+.body-editor {
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.body-editor-raw {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Tek satırda kalır: sarılırsa editörün dikey alanını yer ve dar panelde çift scroll üretir.
+ * Dar genişlikte content-type seçimi daralır. */
+.body-mode-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.body-mode-row select {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.radio-label {
+  white-space: nowrap;
+}
+
+.radio-label {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.auth-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+  max-width: 480px;
+}
+
+.auth-secret-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.auth-secret-row .vi-wrap {
+  flex: 1;
+}
+
+/* --- CodeEditor (CodeMirror 6) --- */
+.code-editor-host {
+  overflow: hidden;
+}
+
+.code-editor-host .cm-editor {
+  height: 100%;
+}
+
+.code-editor-host .cm-scroller {
+  overflow: auto;
+}
+
+/* Body/script/response editörleri: bulundukları panelin kalan dikey alanını doldurur,
+ * uzun içerikte yalnızca CodeMirror'ın kendi scroll'u kayar */
+.raw-body-editor,
+.script-code-editor,
+.response-body-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.raw-body-editor .cm-editor,
+.script-code-editor .cm-editor,
+.response-body-editor .cm-editor {
+  flex: 1;
+  min-height: 0;
+}
+
+.response-body-editor {
+  margin-top: 8px;
+}
+
+/* --- Scripts editörü --- */
+.scripts-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Sekme içi alt sekmeler (Scripts: Pre-request / Post-response) */
+.subtabs {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+}
+
+.subtab:hover {
+  color: var(--text);
+}
+
+.subtab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* İçeriği dolu alt sekmenin rozeti */
+.subtab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Açıklama tek satırda kalır; dar panelde kırpılır */
+.script-hint {
+  font-size: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hint-inline {
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+/* --- Console / Tests panelleri --- */
+.console-panel,
+.tests-panel {
+  padding: 8px 0;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+}
+
+.console-line {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.console-source {
+  color: var(--text-dim);
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.console-log .console-message { color: var(--text); }
+.console-warn .console-message { color: var(--yellow); }
+.console-error .console-message { color: var(--red); }
+
+.test-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.test-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+}
+
+.test-pass .test-icon { color: var(--green); }
+.test-fail .test-icon { color: var(--red); }
+
+.test-name {
+  flex: 1;
+}
+
+.test-error {
+  width: 100%;
+  color: var(--red);
+  padding-left: 24px;
+  font-size: 11px;
+}
+
+/* --- Response viewer --- */
+.response-viewer {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 14px;
+}
+
+/* Headers/Console/Tests sekmeleri: yanıt panelinin kalanında kendi içinde kayar */
+.response-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.response-viewer.empty {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
+
+.response-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: var(--radius);
+  /* Etiket görünümü: metin renginin hafif tonu; boyutu değiştirmesin diye kenarlık yok */
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.status-2xx { color: var(--green); }
+.status-3xx { color: var(--yellow); }
+.status-4xx { color: var(--orange); }
+.status-5xx { color: var(--red); }
+.status-none { color: var(--text-dim); }
+
+.meta-item {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.meta-item.warn {
+  color: var(--yellow);
+}
+
+/* Süre dökümü: tetikleyici meta-item gibi görünür; pencere fixed (yanıt paneli overflow:hidden),
+   top/left TimingsPopover'da tetikleyiciye göre hesaplanır */
+.timings-trigger {
+  padding: 0 2px;
+  border-radius: 4px;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.timings-trigger:hover,
+.timings-trigger[aria-expanded='true'] {
+  color: var(--text);
+}
+
+.timings-popover {
+  position: fixed;
+  width: min(400px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: var(--bg-overlay);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  z-index: 12;
+}
+
+.timings-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.timings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 9.5rem) minmax(40px, 1fr) 4.5rem;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.timings-row.group-start {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.timings-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timings-track {
+  position: relative;
+  height: 8px;
+}
+
+.timings-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 2px;
+  border-radius: 2px;
+}
+
+.timings-prepare { background: var(--text-dim); }
+.timings-script { background: var(--purple); }
+.timings-connection { background: var(--blue); }
+.timings-response { background: var(--green); }
+
+.timings-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.timings-total {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+}
+
+/* Toplam satırında çubuk yok; etiket ("Toplam (scriptler dahil)") iki sütuna yayılır */
+.timings-total .timings-label {
+  grid-column: 1 / 3;
+}
+
+.timings-total .timings-track {
+  display: none;
+}
+
+.timings-notes {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* Küçük bilgi rozeti (ör. "proxy: Kurum") */
+.meta-badge {
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+
+.meta-url {
+  color: var(--text-dim);
+  font-size: 12px;
+  font-family: Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 50%;
+}
+
+.response-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 8px;
+}
+
+.error-text {
+  color: var(--red);
+}
+
+.headers-table {
+  margin-top: 8px;
+  border-collapse: collapse;
+  font-size: 13px;
+  width: 100%;
+}
+
+.headers-table td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border);
+  word-break: break-all;
+}
+
+.header-key {
+  color: var(--blue);
+  font-family: Consolas, monospace;
+  white-space: nowrap;
+}
+
+/* --- History --- */
+/* Gün başlığı kaydırırken üstte kalır */
+.history-day {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 10px 4px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.history-day-count {
+  font-weight: 400;
+}
+
+.history-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.history-row:hover {
+  background: var(--hover);
+}
+
+.history-url {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+}
+
+.history-status {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.history-time {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* --- Modal --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--mask);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal {
+  background: var(--bg-overlay);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: min(860px, 92vw);
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.modal-body {
+  display: flex;
+  flex: 1;
+  min-height: 380px;
+  overflow: hidden;
+}
+
+/* --- Uygulama içi diyaloglar (components/Dialog.tsx) --- */
+.dialog-overlay {
+  z-index: 15;
+}
+
+.modal.dialog {
+  width: min(420px, 92vw);
+}
+
+.modal.dialog.save-dialog {
+  width: min(500px, 92vw);
+}
+
+.dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.dialog-message {
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dialog-label {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.dialog-error {
+  color: var(--red);
+  font-size: 12px;
+}
+
+.dialog-body input[aria-invalid='true'] {
+  border-color: var(--red);
+}
+
+.dialog-inline-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dialog-inline-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.dialog-link-btn {
+  align-self: flex-start;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.danger-btn {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border: 1px solid var(--danger-bg);
+  padding: 6px 18px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  transition: filter 0.2s, box-shadow 0.2s;
+}
+
+.danger-btn:hover {
+  filter: brightness(0.92);
+}
+
+.ghost-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.save-tree {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  max-height: 260px;
+  min-height: 80px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.save-tree .tree-row {
+  user-select: none;
+}
+
+.save-tree .tree-row.selected {
+  background: var(--highlight-bg);
+  color: var(--highlight-text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.save-tree .tree-row:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.env-list {
+  width: 240px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.env-list-title {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding: 10px 12px 4px;
+}
+
+.env-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.env-item:hover {
+  background: var(--hover);
+}
+
+.env-item.selected {
+  background: var(--highlight-bg);
+  color: var(--highlight-text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.env-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.var-table {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.var-table h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.var-header,
+.var-row {
+  display: grid;
+  grid-template-columns: 24px 1fr 1fr 24px 28px;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.var-header {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.var-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+/* --- Sekme çubuğu (açık istekler) --- */
+.tabbar {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  min-height: 34px;
+}
+
+.tabbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tabbar-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text-dim);
+  white-space: nowrap;
+  max-width: 220px;
+  user-select: none;
+}
+
+.tabbar-item:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.tabbar-item.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.tabbar-item .method-tag {
+  width: auto;
+}
+
+.tabbar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+.tabbar-unsaved {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.tabbar-dirty,
+.dirty-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--yellow);
+  flex-shrink: 0;
+}
+
+.tabbar-item .icon-btn {
+  visibility: hidden;
+}
+
+.tabbar-item:hover .icon-btn,
+.tabbar-item.active .icon-btn {
+  visibility: visible;
+}
+
+.tabbar-new {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--text-dim);
+}
+
+.tabbar-new:hover {
+  color: var(--accent);
+  background: var(--hover);
+}
+
+/* --- Değişken vurgulamalı input (VariableInput) --- */
+.vi-wrap {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.vi-input {
+  width: 100%;
+  font-family: Consolas, monospace;
+  /* Metni overlay çizer; input yalnızca caret ve seçim gösterir */
+  color: transparent;
+  caret-color: var(--text);
+}
+
+.vi-input::selection {
+  background: var(--selection-bg);
+  color: transparent;
+}
+
+.vi-input.vi-masked {
+  /* Maskeli (parola) modda overlay yok; noktaları input'un kendisi çizer */
+  color: var(--text);
+}
+
+.vi-input::placeholder {
+  color: var(--text-dim);
+}
+
+.vi-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  font-family: Consolas, monospace;
+  font-size: inherit;
+  line-height: normal;
+  white-space: pre;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--text);
+  display: block;
+}
+
+.vi-var {
+  pointer-events: auto;
+  cursor: help;
+  border-radius: 3px;
+}
+
+.vi-var.known {
+  color: var(--green);
+  background: var(--var-known-bg);
+}
+
+.vi-var.unknown {
+  color: var(--red);
+  background: var(--var-unknown-bg);
+  text-decoration: underline dotted;
+}
+
+/* --- Değişken tooltip'i --- */
+.var-tooltip {
+  position: fixed;
+  z-index: 30;
+  width: 300px;
+  background: var(--bg-overlay);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.var-tooltip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.var-tooltip-head code {
+  color: var(--blue);
+  font-size: 13px;
+}
+
+.var-scope {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.var-scope.unknown {
+  color: var(--red);
+}
+
+.var-tooltip-body {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.var-tooltip-body input {
+  flex: 1;
+  min-width: 0;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+}
+
+.var-tooltip-body .ghost-btn {
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.var-tooltip-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* --- Bildirim --- */
+.notice {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-overlay);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 9px 18px;
+  max-width: 70vw;
+  box-shadow: var(--shadow);
+  z-index: 20;
+}
+
+/* --- Ayarlar --- */
+.modal.dialog.settings-dialog {
+  width: min(520px, 92vw);
+}
+
+.settings-body {
+  padding: 14px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-form h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.settings-form .kv-row {
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-form .kv-key {
+  flex: 0 0 180px;
+  color: var(--text);
+}
+
+.settings-form .settings-version {
+  margin: 0;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-form .hint {
+  padding: 0;
+  line-height: 1.45;
+}
+
+.hint.warn {
+  color: var(--yellow);
+}
+
+/* --- Klavye kısayolları diyaloğu --- */
+.modal.dialog.shortcuts-dialog {
+  width: min(460px, 92vw);
+}
+
+.shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.shortcuts-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.shortcuts-table tr:last-child td {
+  border-bottom: none;
+}
+
+.shortcuts-keys {
+  white-space: nowrap;
+  width: 1%;
+  padding-right: 16px;
+}
+
+.shortcuts-or {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-input);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+.shortcuts-note {
+  padding: 0;
+  line-height: 1.45;
+}
+
+/* --- Koleksiyon/klasör ayarları --- */
+.modal.dialog.hierarchy-dialog {
+  width: min(760px, 92vw);
+}
+
+.hierarchy-settings {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.hierarchy-tabs {
+  padding: 8px 16px 0;
+}
+
+/* Sabit yükseklik: sekme geçişinde diyalog zıplamaz, script editörü kalanı doldurur */
+.hierarchy-dialog .dialog-body {
+  height: 60vh;
+}
+
+.hierarchy-dialog .hint {
+  padding: 0;
+  line-height: 1.45;
+  flex-shrink: 0;
+}
+
+.hierarchy-description {
+  flex: 1;
+  min-height: 120px;
+  resize: none;
+}
+
+.hierarchy-dialog .auth-editor {
+  padding: 0;
+}
+
+.hierarchy-dialog .scripts-editor {
+  padding: 0;
+}
+
+.hierarchy-vars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hierarchy-vars[hidden] {
+  display: none;
+}
+
+.hierarchy-dialog .var-table {
+  padding: 0;
+  overflow: visible;
+}
+
+.hierarchy-error {
+  margin-right: auto;
+  align-self: center;
+  overflow-wrap: anywhere;
+}
+
+/* --- Proxy profilleri diyaloğu --- */
+.modal.dialog.proxy-dialog {
+  width: min(600px, 92vw);
+}
+
+.proxy-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.proxy-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 0;
+}
+
+.proxy-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: default;
+}
+
+.proxy-row:hover {
+  background: var(--hover);
+}
+
+.proxy-row.active {
+  background: var(--highlight-bg);
+  color: var(--highlight-text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.proxy-name {
+  flex: 0 1 180px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proxy-url {
+  flex: 1;
+  min-width: 0;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proxy-url.hint {
+  font-family: inherit;
+  padding: 0;
+}
+
+.proxy-add-btn {
+  align-self: flex-start;
+}
+
+.proxy-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+}
+
+.proxy-form h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.proxy-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.proxy-field > span {
+  flex: 0 0 140px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.proxy-field > input {
+  flex: 1;
+  min-width: 0;
+}
+
+.proxy-form .hint,
+.postman-body .hint {
+  padding: 0;
+  line-height: 1.45;
+}
+
+.proxy-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* --- Postman'dan çek diyaloğu --- */
+.modal.dialog.postman-dialog {
+  width: min(620px, 92vw);
+}
+
+.postman-body {
+  gap: 10px;
+}
+
+.postman-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.postman-toolbar .hint {
+  flex: 1;
+}
+
+.postman-workspace {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.postman-workspace legend {
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+.postman-ws-type {
+  font-weight: 400;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.postman-group-title {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  padding-top: 6px;
+}
+
+.postman-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.postman-summary {
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.postman-report h3 {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.postman-report ul {
+  padding-left: 18px;
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+/* --- Dışa aktarma / paylaşım (issue #13) --- */
+.modal.dialog.export-dialog {
+  width: min(460px, 92vw);
+}
+
+.modal.dialog.share-dialog {
+  width: min(620px, 92vw);
+}
+
+.export-body,
+.share-body {
+  gap: 10px;
+}
+
+.export-body .hint,
+.share-body .hint {
+  padding: 0;
+  line-height: 1.45;
+}
+
+.secrets-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.secrets-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--red);
+  border-radius: var(--radius);
+  color: var(--red);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.secrets-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.secrets-warning-count {
+  font-weight: 600;
+}
+
+.share-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-item-meta {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.secret-badge {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* --- cURL (issue #16) --- */
+.curl-copy-btn {
+  min-width: 34px;
+  padding: 5px 8px;
+}
+
+.curl-copy-btn.copied,
+.curl-copy-btn.copied:not(:disabled):hover {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.curl-copy-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.curl-menu-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.curl-menu-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.modal.dialog.curl-dialog {
+  width: min(640px, 92vw);
+}
+
+.curl-textarea {
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 140px;
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.curl-textarea[aria-invalid='true'] {
+  border-color: var(--red);
+}
+
+.dialog-body .hint.curl-hint {
+  padding: 0;
+}
+
+.curl-lines {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+data/
+*.log
+.DS_Store
+# paket çıktıları (launcher/package.mjs); CI üretir
+/Reqly.exe
+launcher/sea-prep.blob
+# Tauri (src-tauri): derleme çıktısı ve package.mjs --sidecar-dir ürünleri
+src-tauri/target/
+src-tauri/binaries/
+src-tauri/resources/
+src-tauri/gen/
+# Claude Code kişisel ayarları
+.claude/settings.local.json

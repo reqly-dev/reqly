@@ -1,0 +1,51 @@
+# Reqly masaüstü kabuğu (Tauri 2). Node sunucusu `binaries/reqly-server-<triple>` sidecar'ı olarak
+# başlatılır; pencere sidecar'ın verdiği http://127.0.0.1:<port>/ adresini yükler.
+# Gerçek sürüm numarası tauri.conf.json üzerinden ../package.json'dan okunur; buradaki
+# değer yalnızca Cargo için yer tutucudur.
+[package]
+name = "reqly"
+version = "0.0.0"
+description = "Tamamen yerel çalışan, hafif ve veri gizliliği odaklı API istemcisi"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/reqly-dev/reqly"
+homepage = "https://reqly.talhacigdem.tr"
+# tauri-plugin-updater 2.14 en az 1.90 ister.
+rust-version = "1.90"
+publish = false
+
+[lib]
+# Tauri şablonundaki gibi: ana mantık kütüphanede, main.rs yalnızca giriş noktası.
+name = "reqly_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7", features = [] }
+
+[dependencies]
+tauri = { version = "2.12", features = [] }
+tauri-plugin-shell = "2.6"
+tauri-plugin-dialog = "2.8"
+# Uygulama içi güncelleme (issue #9). Yeniden başlatma için ayrı plugin gerekmez:
+# tauri-plugin-process yalnızca JS tarafına `app.restart()`'ı açan ince sarmalayıcıdır, biz Rust'tan
+# doğrudan çağırıyoruz.
+tauri-plugin-updater = "2.14"
+# Aşağıdakiler updater/tauri ile zaten ağaçta; sidecar'a yerel HTTP (ayarlar, proxy) ve 24 saatlik
+# tekrar için aynı sürümlerle doğrudan kullanılır — ek crate derlenmez.
+reqwest = { version = "0.13", default-features = false, features = ["json"] }
+serde_json = "1"
+tokio = { version = "1", features = ["time"] }
+# Kripto sağlayıcıyı erkenden kurmak için (bkz. update.rs schedule_checks); eklenti zaten ring ile getiriyor
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+
+[dev-dependencies]
+# Ön-sürüm (1.0.0-rc.N) sıralamasının updater'ın `release.version > current` kuralıyla uyumunu belgeleyen test.
+semver = "1"
+
+[profile.release]
+# Daha küçük ikili: panik mesajı yerine abort, tek codegen birimi, LTO.
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
