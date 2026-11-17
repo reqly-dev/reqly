@@ -62,7 +62,7 @@ echo "sürüm: $old → $new"
 msg=$(mktemp); trap 'rm -f "$msg"' EXIT
 { printf 'Sürüm %s\n' "$new"; [[ -n "${SURUM_COMMIT_TRAILERS:-}" ]] && printf '\n%s\n' "$SURUM_COMMIT_TRAILERS"; } > "$msg"
 git add package.json package-lock.json packages/*/package.json
-git commit -q -F "$msg"
+git commit -q -s -F "$msg"   # DCO: Signed-off-by (CONTRIBUTING.md)
 git tag -a "v$new" -m "Reqly $new"
 echo "commit: $(git rev-parse --short HEAD)  etiket: v$new"
 
