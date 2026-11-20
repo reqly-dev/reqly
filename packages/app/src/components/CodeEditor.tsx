@@ -227,7 +227,9 @@ export function CodeEditor({
         keymap.of([indentWithTab]),
         languageCompartment.of(languageExtension(language)),
         readOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
-        EditorView.editable.of(!readOnly),
+        // `editable` false yapılmaz: içerik odaklanamaz, Ctrl+A tüm sayfayı seçer. Salt-okunur
+        // durumda da odaklanabilir kalır (Ctrl+A/kopyala yalnızca editör içeriğine uygulanır),
+        // düzenlemeyi `EditorState.readOnly` engeller.
         theme,
         darkCompartment.of(EditorView.darkTheme.of(isDark)),
         syntaxHighlighting(highlightStyle),
