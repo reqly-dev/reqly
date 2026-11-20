@@ -25,6 +25,14 @@ export interface ScriptHostHandlers {
   onSendRequest(request: ScriptHttpRequest, opts: { timeoutMs: number; signal: AbortSignal }): Promise<ScriptHttpResponse>;
 }
 
+/** Çalışan script kullanıcı tarafından iptal edildiğinde (worker öldürülür) fırlatılır */
+export class ScriptCancelledError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ScriptCancelledError';
+  }
+}
+
 /** Başlatıcıya "sunucu değil, script worker'ı ol" diyen ortam değişkeni (bkz. launcher/reqster-launcher.js) */
 export const WORKER_MODE_ENV = 'REQSTER_WORKER_MODE';
 /** Host-side güvenlik ağı: worker kendi timeout'unu aşıp da hiç yanıt vermezse (asılı kalırsa) devreye girer */
@@ -89,9 +97,15 @@ function getWorker(lang: Lang): { proc: ChildProcess; ready: Promise<void> } {
   return { proc: worker, ready: workerReady! };
 }
 
-async function runOnce(input: RunScriptRequest, handlers: ScriptHostHandlers): Promise<RunScriptResponse> {
+async function runOnce(
+  input: RunScriptRequest,
+  handlers: ScriptHostHandlers,
+  signal?: AbortSignal,
+): Promise<RunScriptResponse> {
   // IPC olay dinleyicileri (message/exit) AsyncLocalStorage bağlamını taşımaz; dil baştan yakalanır
   const lang = input.language;
+  const cancelledMsg = t(lang, 'execute.cancelled');
+  if (signal?.aborted) throw new ScriptCancelledError(cancelledMsg);
   const { proc, ready } = getWorker(lang);
   await ready;
 
@@ -136,6 +150,15 @@ async function runOnce(input: RunScriptRequest, handlers: ScriptHostHandlers): P
       // Çalıştırma bu arada bittiyse (zaman aşımı/worker ölümü) yanıtın gidecek yeri yok
       if (!settled && proc.connected) proc.send(reply);
     }
+    // İptal: isolate içindeki kod dışarıdan durdurulamaz, bu yüzden worker öldürülür (loglar kaybolur);
+    // bir sonraki çalıştırma yeni worker açar
+    const onAbort = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      proc.kill();
+      reject(new ScriptCancelledError(cancelledMsg));
+    };
     const onExit = (code: number | null) => {
       if (settled) return;
       settled = true;
@@ -145,6 +168,7 @@ async function runOnce(input: RunScriptRequest, handlers: ScriptHostHandlers): P
 
     function cleanup() {
       clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
       proc.off('message', onMessage);
       proc.off('exit', onExit);
       for (const controller of pendingCalls.values()) controller.abort();
@@ -153,13 +177,18 @@ async function runOnce(input: RunScriptRequest, handlers: ScriptHostHandlers): P
 
     proc.on('message', onMessage);
     proc.on('exit', onExit);
+    signal?.addEventListener('abort', onAbort, { once: true });
     proc.send({ type: 'run', ...input });
   });
 }
 
 /** Script çalıştırmalarını tek worker üzerinden sıraya alarak yürütür */
-export function runScript(input: RunScriptRequest, handlers: ScriptHostHandlers): Promise<RunScriptResponse> {
-  const result = queue.then(() => runOnce(input, handlers));
+export function runScript(
+  input: RunScriptRequest,
+  handlers: ScriptHostHandlers,
+  signal?: AbortSignal,
+): Promise<RunScriptResponse> {
+  const result = queue.then(() => runOnce(input, handlers, signal));
   // Sıradaki iş, bu işin başarısız olmasından etkilenmemeli
   queue = result.catch(() => undefined);
   return result;
