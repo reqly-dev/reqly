@@ -7,6 +7,8 @@ export interface KeyValueItem {
   key: string;
   value: string;
   enabled: boolean;
+  /** Yalnızca form-data: 'file' ise `value` yerel dosya yoludur (yoksa 'text') */
+  type?: 'text' | 'file';
 }
 
 export type BodyMode = 'none' | 'raw' | 'urlencoded' | 'form-data';

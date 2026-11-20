@@ -95,6 +95,7 @@ export function BodyEditor({ body, onChange, collectionId }: Props) {
           onChange={(items) => onChange({ ...body, items })}
           keyPlaceholder={t('body.field.placeholder')}
           collectionId={collectionId}
+          allowFile={body.mode === 'form-data'}
         />
       )}
 

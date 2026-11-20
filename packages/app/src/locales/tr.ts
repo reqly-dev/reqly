@@ -241,7 +241,11 @@ export const tr = {
   'body.formatFailed': 'Formatlanamadı: {error}',
   'body.raw.placeholder': '{"örnek": "gövde"}',
   'body.field.placeholder': 'alan',
-  'body.formData.hint': "Faz 1'de yalnızca metin alanları destekleniyor; dosya alanları henüz yok.",
+  'body.formData.hint': 'Dosya alanında bu bilgisayardaki dosyanın tam yolunu yazın; dosya her gönderimde diskten okunur.',
+  'kv.type.text': 'Metin',
+  'kv.type.file': 'Dosya',
+  'kv.type.title': 'Alan türü',
+  'kv.file.placeholder': 'dosya yolu (örn. C:\\Belgeler\\rapor.pdf)',
 
   // Script düzenleyici
   'scripts.type.aria': 'Script türü',
