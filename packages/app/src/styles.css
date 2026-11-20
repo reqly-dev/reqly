@@ -721,6 +721,18 @@ button:focus-visible {
   flex: 1;
 }
 
+.kv-bulk-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.kv-bulk {
+  width: 100%;
+  min-height: 160px;
+  font-family: var(--mono, monospace);
+  resize: vertical;
+}
+
 /* Listenin altındaki boş "hayalet" satır: yazılınca gerçek satıra dönüşür */
 .kv-row.kv-ghost {
   opacity: 0.55;
