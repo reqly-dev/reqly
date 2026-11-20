@@ -20,7 +20,7 @@ const MODES: Array<{ value: BodyMode; label: MessageKey | { text: string }; titl
   { value: 'form-data', label: { text: 'form-data' }, title: 'multipart/form-data' },
 ];
 
-const CONTENT_TYPES = ['application/json', 'text/plain', 'application/xml', 'text/html'];
+const CONTENT_TYPES = ['application/json', 'text/plain', 'application/xml', 'text/xml', 'text/html'];
 
 export function BodyEditor({ body, onChange, collectionId }: Props) {
   const showNotice = useAppStore((s) => s.showNotice);
@@ -95,6 +95,7 @@ export function BodyEditor({ body, onChange, collectionId }: Props) {
           onChange={(items) => onChange({ ...body, items })}
           keyPlaceholder={t('body.field.placeholder')}
           collectionId={collectionId}
+          allowFile={body.mode === 'form-data'}
         />
       )}
 

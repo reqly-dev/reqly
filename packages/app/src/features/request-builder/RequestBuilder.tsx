@@ -1,4 +1,4 @@
-import { HTTP_METHODS, type HttpMethod } from '@reqster/shared';
+import { HTTP_METHODS, type HttpMethod, type RequestBody } from '@reqster/shared';
 import { useState, type ReactNode } from 'react';
 import { useT } from '../../lib/i18n';
 import { applyUrlText, buildUrl, sameParams } from '../../lib/urlQuery';
@@ -14,9 +14,19 @@ import { ScriptsEditor } from './ScriptsEditor';
 
 type Tab = 'params' | 'headers' | 'body' | 'auth' | 'scripts';
 
+/** Body sekmesindeki nokta: seçili kipte gerçekten gönderilecek bir şey varsa (boş raw / boş liste sayılmaz) */
+function hasBodyContent(body: RequestBody | null | undefined): boolean {
+  if (!body) return false;
+  if (body.mode === 'raw') return (body.raw ?? '').trim() !== '';
+  if (body.mode === 'urlencoded' || body.mode === 'form-data') {
+    return (body.items ?? []).some((i) => i.enabled && i.key.trim() !== '');
+  }
+  return false;
+}
+
 export function RequestBuilder() {
   const tab = useAppStore(selectActiveTab);
-  const { updateDraft, send } = useAppStore();
+  const { updateDraft, send, cancelSend } = useAppStore();
   const [section, setSection] = useState<Tab>('params');
   const t = useT();
   const { draft, dirty, executing } = tab;
@@ -73,7 +83,7 @@ export function RequestBuilder() {
           }}
           onBlur={() => setRawUrl(null)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') void send();
+            if (e.key === 'Enter' && !executing) void send();
           }}
           onPaste={(e) => {
             // Yapıştırılan bir cURL komutuysa URL'ye yazılmaz, isteğe çevrilir
@@ -84,14 +94,15 @@ export function RequestBuilder() {
           }}
         />
         <CurlCopyMenu />
-        <button
-          className="send-btn"
-          title={t('request.send.title')}
-          onClick={() => void send()}
-          disabled={executing}
-        >
-          {executing ? t('request.sending') : t('request.send')}
-        </button>
+        {executing ? (
+          <button className="send-btn cancel" title={t('request.cancel.title')} onClick={cancelSend}>
+            {t('request.cancel')}
+          </button>
+        ) : (
+          <button className="send-btn" title={t('request.send.title')} onClick={() => void send()}>
+            {t('request.send')}
+          </button>
+        )}
       </div>
 
       <div className="tabs">
@@ -99,13 +110,29 @@ export function RequestBuilder() {
           [
             ['params', `${t('request.tab.params')}${countEnabled(draft.params)}`],
             ['headers', `${t('request.tab.headers')}${countEnabled(draft.headers)}`],
-            ['body', t('request.tab.body')],
-            ['auth', t('request.tab.auth')],
+            [
+              'body',
+              <>
+                {t('request.tab.body')}
+                {hasBodyContent(draft.body) && (
+                  <span className="dirty-dot" title={t('request.tab.hasContent')} />
+                )}
+              </>,
+            ],
+            [
+              'auth',
+              <>
+                {t('request.tab.auth')}
+                {draft.auth && draft.auth.type !== 'none' && (
+                  <span className="dirty-dot" title={t('request.tab.hasContent')} />
+                )}
+              </>,
+            ],
             [
               'scripts',
               <>
                 {t('request.tab.scripts')}
-                {(draft.preRequestScript || draft.postResponseScript) && <span className="dirty-dot" />}
+                {(draft.preRequestScript || draft.postResponseScript) && <span className="dirty-dot" title={t('request.tab.hasContent')} />}
               </>,
             ],
           ] as Array<[Tab, ReactNode]>

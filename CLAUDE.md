@@ -413,11 +413,23 @@ connector'a değil isteğin `AsyncLocalStorage` bağlamına bağlanır (`withPro
   klasör/koleksiyon alt ağacı özyinelemeli; koleksiyon değişkenleri ve ortam değişkenleri secret değer + işaret + enabled ile
   kopyalanır; kopya ortam etkin yapılmaz. UI: ağaç satırında ve Ortamlar penceresinde `Copy` simgesi; istek kopyası yeni sekmede
   açılır, ortam kopyası seçilir. `api.post` gövdesizken `Content-Type` göndermez (Fastify boş JSON gövdeyi 400'ler).
+- **GitHub issue'larından gelen arayüz işleri** (2026-11-20, rc.21): Body/Auth sekmelerinde içerik noktası (Body'de yalnızca
+  gönderilecek içerik varsa); anahtar/değer listelerinde **toplu düzenleme** (`anahtar:değer`, devre dışı satır `//`, form-data
+  dosya türü anahtardan korunur); sekmeler **sürükle-bırak** ile sıralanır (`moveTab`; masaüstünde `dragDropEnabled: false`, yoksa
+  WebView2 HTML5 sürüklemeyi yutar); gönderim sürerken yanıt panelinde ilerleme çubuğu + canlı sayaç ve **İptal** (UI `fetch`'i
+  `AbortController` ile keser, `execute.routes.ts` yanıt bağlantısı kapanınca executor'a `signal` geçirir, undici isteği
+  iptal olur, history'ye `execute.cancelled`); raw türlerine `text/xml`.
+- **form-data dosya alanı** (2026-11-20): `KeyValueItem.type: 'file'`, değer yerel dosya yolu; gönderimde diskten bellekle okunur
+  (streaming yok), history'ye içerik değil `<ad: N B>` yazılır; Postman dışa aktarımı `type: file` + `src`, cURL `--form k=@yol`;
+  Postman içe aktarımı dosya alanlarını hâlâ atlar (raporlar). **Güvenlik kuralı:** dosya alanı yalnızca kullanıcının gönderdiği
+  istekte (`ExecuteInput.body`) aynı yolla varsa okunur; pre-request script'i `rq.request.body` ile dosya satırı ekleyemez ya da
+  yolunu değiştiremez (`execute.formFileFromScript`), yol `{{değişken}}` ile çözülmez — aksi halde içe aktarılan bir koleksiyonun
+  script'i diskteki dosyaları dışarı gönderebilirdi (koruma kapatılarak sızma gösterildi, açıkken reddedildi).
 - **Üst bar sadeleştirmesi** (2026-11-13): "+ Yeni istek" kalktı (sekme + / Alt+T), ortam seçici + Ortamlar
   tek menü (Ortam yok / ortamlar / Ortamlar… / Değişkenler…), Ayarlar yalnızca simge, İçe aktar menüsü (Dosyadan… /
   Postman'dan çek…).
 
-Bilinen sınırlamalar: form-data'da dosya alanı yok;
+Bilinen sınırlamalar: form-data dosya alanı yerel yolla çalışır (dosya seçici yok, dosya her gönderimde diskten okunur, Postman içe aktarımında dosya yolları alınmaz);
 script log/test sonuçları history'de kalıcı değil (yalnızca o çalıştırmanın UI state'i);
 `isolated-vm@7` paketi Node ≥26 istiyor ama Node 24.15'te sorunsuz çalışıyor (bkz. `npm warn EBADENGINE`
 uyarısı — zararsız, göz ardı edilebilir).
@@ -442,7 +454,7 @@ Depo: `https://github.com/reqster-dev/reqster` (CI, Release'ler, katkılar).
 - [ ] OpenAPI import
 - [ ] Cookie yönetimi: `engine/cookie-jar.ts` + UI
 - [ ] Secret değerlerin OS keychain'e taşınması (tabloda yalnızca referans)
-- [ ] form-data dosya alanı desteği (multipart streaming)
+- [x] form-data dosya alanı (2026-11-20; yerel yol, bellekte multipart; kalan: dosya seçici, streaming)
 
 ### Birikmiş küçük işler (fazdan bağımsız)
 - [ ] Raw body editöründe `{{var}}` vurgusu (VariableInput overlay tekniğinin textarea'ya uyarlanması)

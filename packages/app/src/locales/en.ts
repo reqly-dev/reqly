@@ -196,12 +196,12 @@ export const en: Record<MessageKey, string> = {
   'request.url.placeholder': 'https://api.example.com/v1/resource or {{baseUrl}}/resource',
   'request.send': 'Send',
   'request.send.title': 'Send (Ctrl+Enter)',
-  'request.sending': 'Sending…',
   'request.tab.params': 'Params',
   'request.tab.headers': 'Headers',
   'request.tab.body': 'Body',
   'request.tab.auth': 'Auth',
   'request.tab.scripts': 'Scripts',
+  'request.tab.hasContent': 'Has content',
   'request.params.keyPlaceholder': 'param',
   'request.headers.keyPlaceholder': 'Header-Name',
 
@@ -227,7 +227,11 @@ export const en: Record<MessageKey, string> = {
   'body.formatFailed': 'Could not format: {error}',
   'body.raw.placeholder': '{"example": "body"}',
   'body.field.placeholder': 'field',
-  'body.formData.hint': 'Phase 1 supports text fields only; file fields are not available yet.',
+  'body.formData.hint': 'For a file field, enter the full path of a file on this computer; it is read from disk on every send.',
+  'kv.type.text': 'Text',
+  'kv.type.file': 'File',
+  'kv.type.title': 'Field type',
+  'kv.file.placeholder': 'file path (e.g. /home/me/report.pdf)',
 
   'scripts.type.aria': 'Script type',
   'scripts.pre': 'Pre-request',
@@ -342,6 +346,9 @@ export const en: Record<MessageKey, string> = {
 
   'kv.value.placeholder': 'value ({{variable}} allowed)',
   'kv.removeRow': 'Remove row',
+  'kv.bulk.edit': 'Bulk edit',
+  'kv.bulk.back': 'Key-value edit',
+  'kv.bulk.placeholder': 'One key:value per line — prefix a line with // to disable it',
 
   'varTip.scope.environment': 'Environment',
   'varTip.scope.collection': 'Collection',
@@ -358,6 +365,10 @@ export const en: Record<MessageKey, string> = {
   'split.handle.title': 'Drag to resize; double-click to reset',
 
   'notice.urlRequired': 'URL cannot be empty',
+  'notice.requestCancelled': 'Request cancelled',
+  'request.cancel': 'Cancel',
+  'request.cancel.title': 'Cancel the request in flight',
+  'response.sending': 'Waiting for response…',
   'notice.unresolvedVariables': 'Unresolved variables: {list}',
   'notice.requestSaved': 'Request saved',
   'notice.invalidJsonFile': 'File is not valid JSON',

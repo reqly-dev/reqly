@@ -208,12 +208,12 @@ export const tr = {
   'request.url.placeholder': 'https://api.ornek.com/v1/kaynak veya {{baseUrl}}/kaynak',
   'request.send': 'Gönder',
   'request.send.title': 'Gönder (Ctrl+Enter)',
-  'request.sending': 'Gönderiliyor…',
   'request.tab.params': 'Params',
   'request.tab.headers': 'Headers',
   'request.tab.body': 'Body',
   'request.tab.auth': 'Auth',
   'request.tab.scripts': 'Scripts',
+  'request.tab.hasContent': 'İçerik var',
   'request.params.keyPlaceholder': 'param',
   'request.headers.keyPlaceholder': 'Header-Adı',
 
@@ -241,7 +241,11 @@ export const tr = {
   'body.formatFailed': 'Formatlanamadı: {error}',
   'body.raw.placeholder': '{"örnek": "gövde"}',
   'body.field.placeholder': 'alan',
-  'body.formData.hint': "Faz 1'de yalnızca metin alanları destekleniyor; dosya alanları henüz yok.",
+  'body.formData.hint': 'Dosya alanında bu bilgisayardaki dosyanın tam yolunu yazın; dosya her gönderimde diskten okunur.',
+  'kv.type.text': 'Metin',
+  'kv.type.file': 'Dosya',
+  'kv.type.title': 'Alan türü',
+  'kv.file.placeholder': 'dosya yolu (örn. C:\\Belgeler\\rapor.pdf)',
 
   // Script düzenleyici
   'scripts.type.aria': 'Script türü',
@@ -364,6 +368,9 @@ export const tr = {
   // Anahtar/değer düzenleyici
   'kv.value.placeholder': 'değer ({{degisken}} kullanılabilir)',
   'kv.removeRow': 'Satırı sil',
+  'kv.bulk.edit': 'Toplu düzenle',
+  'kv.bulk.back': 'Anahtar/değer düzenleyici',
+  'kv.bulk.placeholder': 'Her satır anahtar:değer — devre dışı satırın başına // koyun',
 
   // Değişken tooltip'i
   'varTip.scope.environment': 'Ortam',
@@ -383,6 +390,10 @@ export const tr = {
 
   // Store bildirimleri
   'notice.urlRequired': 'URL boş olamaz',
+  'notice.requestCancelled': 'İstek iptal edildi',
+  'request.cancel': 'İptal',
+  'request.cancel.title': 'Süren isteği iptal et',
+  'response.sending': 'Yanıt bekleniyor…',
   'notice.unresolvedVariables': 'Çözülemeyen değişkenler: {list}',
   'notice.requestSaved': 'İstek kaydedildi',
   'notice.invalidJsonFile': 'Dosya geçerli JSON değil',

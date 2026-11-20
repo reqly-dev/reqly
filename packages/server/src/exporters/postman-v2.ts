@@ -40,8 +40,11 @@ export interface PmExportKeyValue {
   disabled?: true;
 }
 
-export interface PmExportFormField extends PmExportKeyValue {
-  type: 'text';
+export interface PmExportFormField extends Omit<PmExportKeyValue, 'value'> {
+  type: 'text' | 'file';
+  value?: string;
+  /** type=file için yerel dosya yolu */
+  src?: string;
 }
 
 export interface PmExportAuthParam {
@@ -192,8 +195,15 @@ function convertBody(body: RequestBody | null): PmExportBody | undefined {
     case 'urlencoded':
       return { mode: 'urlencoded', urlencoded: keyValues(body.items ?? []) };
     case 'form-data':
-      // Reqster'de dosya alanı yok; hepsi metin alanı
-      return { mode: 'formdata', formdata: keyValues(body.items ?? []).map((f) => ({ ...f, type: 'text' })) };
+      return {
+        mode: 'formdata',
+        formdata: (body.items ?? []).map((item): PmExportFormField => {
+          const base = item.enabled ? { key: item.key } : { key: item.key, disabled: true as const };
+          return item.type === 'file'
+            ? { ...base, type: 'file', src: item.value }
+            : { ...base, value: item.value, type: 'text' };
+        }),
+      };
     default:
       return undefined;
   }

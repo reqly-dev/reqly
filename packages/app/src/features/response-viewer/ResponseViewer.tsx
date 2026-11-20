@@ -1,5 +1,5 @@
 import { CircleCheck, CircleX } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CodeEditor } from '../../components/LazyCodeEditor';
 import { formatByLanguage, languageFromContentType, sniffLanguage } from '../../lib/formatters';
 import { useT } from '../../lib/i18n';
@@ -23,8 +23,19 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+/** Gönderim başladığından beri geçen süreyi canlı gösterir */
+function LiveTimer({ since }: { since: number }) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 50);
+    return () => clearInterval(id);
+  }, []);
+  return <span className="meta-item live-timer">{Math.max(0, nowMs - since)} ms</span>;
+}
+
 export function ResponseViewer() {
   const response = useAppStore((s) => selectActiveTab(s).response);
+  const executingSince = useAppStore((s) => selectActiveTab(s).executingSince);
   const [tab, setTab] = useState<Tab>('body');
   const t = useT();
 
@@ -43,10 +54,21 @@ export function ResponseViewer() {
     }
   }, [response, language]);
 
+  const executing = executingSince != null;
+  const progress = executing ? <div className="progress-bar" role="progressbar" aria-label={t('response.sending')} /> : null;
+
   if (!response) {
     return (
       <div className="response-viewer empty">
-        <p>{t('response.empty')}</p>
+        {progress}
+        {executing ? (
+          <>
+            <p>{t('response.sending')}</p>
+            <LiveTimer since={executingSince} />
+          </>
+        ) : (
+          <p>{t('response.empty')}</p>
+        )}
       </div>
     );
   }
@@ -55,6 +77,7 @@ export function ResponseViewer() {
 
   return (
     <div className="response-viewer">
+      {progress}
       <div className="response-meta">
         {response.error ? (
           <span className="status-badge status-5xx">{response.scriptError ? t('response.badge.scriptError') : t('response.badge.error')}</span>
@@ -63,7 +86,9 @@ export function ResponseViewer() {
             {response.status ?? '—'}
           </span>
         )}
-        {response.timings ? (
+        {executing ? (
+          <LiveTimer since={executingSince} />
+        ) : response.timings ? (
           <TimingsPopover
             timings={response.timings}
             label={response.scriptError ? Math.round(response.timings.totalMs) : response.durationMs}

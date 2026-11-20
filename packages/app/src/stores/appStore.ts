@@ -61,7 +61,12 @@ export interface RequestTab {
   dirty: boolean;
   response: ExecuteResult | null;
   executing: boolean;
+  /** Gönderimin başladığı an (epoch ms); canlı sayaç için. `executing` false iken null */
+  executingSince: number | null;
 }
+
+/** Sekme başına süren gönderimin iptal denetleyicisi (state'e girmez, serileştirilemez) */
+const sendControllers = new Map<string, AbortController>();
 
 function emptyDraft(collectionId?: string, folderId?: string | null): Draft {
   return {
@@ -80,7 +85,7 @@ function emptyDraft(collectionId?: string, folderId?: string | null): Draft {
 }
 
 function newTabState(draft: Draft): RequestTab {
-  return { id: crypto.randomUUID(), draft, dirty: false, response: null, executing: false };
+  return { id: crypto.randomUUID(), draft, dirty: false, response: null, executing: false, executingSince: null };
 }
 
 interface AppState {
@@ -106,6 +111,8 @@ interface AppState {
   newTab: (collectionId?: string, folderId?: string | null) => void;
   openRequest: (request: RequestModel) => void;
   setActiveTab: (id: string) => void;
+  /** Sekmeyi hedef sekmenin önüne (`after=true` ise arkasına) taşır; sekme kimlikleri değişmez */
+  moveTab: (id: string, targetId: string, after: boolean) => void;
   /** Kaydedilmemiş sekmede onay sorar; kapatıldıysa true */
   closeTab: (id: string) => Promise<boolean>;
   updateDraft: (patch: Partial<Draft>) => void;
@@ -117,6 +124,8 @@ interface AppState {
   /** Ayrıştırılmış cURL'ü yeni kayıtsız sekmede açar (aktif sekme dokunulmamış boş taslaksa onun yerine) */
   openCurlInNewTab: (result: CurlImportResult) => void;
   send: () => Promise<void>;
+  /** Aktif sekmedeki süren gönderimi iptal eder */
+  cancelSend: () => void;
   /**
    * Aktif sekmeyi kaydeder: `target` verilirse `saveDraftAs` ile aynı (yeni kayıt);
    * yoksa kayıtlıysa PATCH, `collectionId`'si varsa POST. Hedef yoksa kaydetmez
@@ -322,6 +331,18 @@ export const useAppStore = create<AppState>((set, get) => {
 
     setActiveTab: (id) => set({ activeTabId: id }),
 
+    moveTab: (id, targetId, after) =>
+      set((s) => {
+        if (id === targetId) return s;
+        const moving = s.tabs.find((t) => t.id === id);
+        if (!moving) return s;
+        const rest = s.tabs.filter((t) => t.id !== id);
+        const targetIndex = rest.findIndex((t) => t.id === targetId);
+        if (targetIndex < 0) return s;
+        rest.splice(after ? targetIndex + 1 : targetIndex, 0, moving);
+        return rest.every((t, i) => t === s.tabs[i]) ? s : { tabs: rest };
+      }),
+
     closeTab: async (id) => {
       const tab = get().tabs.find((t) => t.id === id);
       if (!tab) return false;
@@ -370,19 +391,29 @@ export const useAppStore = create<AppState>((set, get) => {
         get().showNotice(t('notice.urlRequired'));
         return;
       }
-      patchTab(tab.id, { executing: true });
+      if (sendControllers.has(tab.id)) return;
+      const controller = new AbortController();
+      sendControllers.set(tab.id, controller);
+      patchTab(tab.id, { executing: true, executingSince: Date.now() });
       try {
-        const result = await api.post<ExecuteResult>('/execute', toExecuteInput(draft));
+        const result = await api.post<ExecuteResult>('/execute', toExecuteInput(draft), controller.signal);
         patchTab(tab.id, { response: result });
         if (result.unresolvedVariables.length > 0) {
           get().showNotice(t('notice.unresolvedVariables', { list: result.unresolvedVariables.join(', ') }));
         }
       } catch (err) {
-        get().showNotice(err instanceof Error ? err.message : String(err));
+        // Kullanıcı iptali hata değildir; sunucu bağlantı kopunca giden isteği zaten durdurur
+        if (controller.signal.aborted) get().showNotice(t('notice.requestCancelled'));
+        else get().showNotice(err instanceof Error ? err.message : String(err));
       } finally {
-        patchTab(tab.id, { executing: false });
+        sendControllers.delete(tab.id);
+        patchTab(tab.id, { executing: false, executingSince: null });
         void get().refreshHistory();
       }
+    },
+
+    cancelSend: () => {
+      sendControllers.get(selectActiveTab(get()).id)?.abort();
     },
 
     saveDraft: async (target) => {
