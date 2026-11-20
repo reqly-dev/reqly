@@ -536,6 +536,16 @@ button:focus-visible {
   border-color: var(--accent-hover);
 }
 
+.send-btn.cancel {
+  background: transparent;
+  color: var(--accent);
+}
+
+.send-btn.cancel:not(:disabled):hover {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-color: var(--accent);
+}
+
 .send-btn:disabled {
   opacity: 0.6;
   cursor: default;
@@ -961,7 +971,47 @@ button:focus-visible {
   overflow-y: auto;
 }
 
+/* Gönderim sürerken yanıt panelinin üstünde akan belirsiz ilerleme çubuğu */
+.response-viewer {
+  position: relative;
+}
+
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.progress-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  background: var(--accent);
+  animation: progress-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  from { left: -35%; }
+  to { left: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar::before { animation-duration: 3s; }
+}
+
+.live-timer {
+  font-variant-numeric: tabular-nums;
+}
+
 .response-viewer.empty {
+  gap: 6px;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   color: var(--text-dim);

@@ -358,6 +358,10 @@ export const en: Record<MessageKey, string> = {
   'split.handle.title': 'Drag to resize; double-click to reset',
 
   'notice.urlRequired': 'URL cannot be empty',
+  'notice.requestCancelled': 'Request cancelled',
+  'request.cancel': 'Cancel',
+  'request.cancel.title': 'Cancel the request in flight',
+  'response.sending': 'Waiting for response…',
   'notice.unresolvedVariables': 'Unresolved variables: {list}',
   'notice.requestSaved': 'Request saved',
   'notice.invalidJsonFile': 'File is not valid JSON',
