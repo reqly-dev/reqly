@@ -1466,6 +1466,18 @@ button:focus-visible {
   color: var(--text);
 }
 
+.tabbar-item.dragging {
+  opacity: 0.5;
+}
+
+.tabbar-item.drop-before {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.tabbar-item.drop-after {
+  box-shadow: inset -2px 0 0 var(--accent);
+}
+
 .tabbar-item.active {
   background: var(--bg);
   color: var(--text);
