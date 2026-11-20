@@ -413,6 +413,18 @@ connector'a değil isteğin `AsyncLocalStorage` bağlamına bağlanır (`withPro
   klasör/koleksiyon alt ağacı özyinelemeli; koleksiyon değişkenleri ve ortam değişkenleri secret değer + işaret + enabled ile
   kopyalanır; kopya ortam etkin yapılmaz. UI: ağaç satırında ve Ortamlar penceresinde `Copy` simgesi; istek kopyası yeni sekmede
   açılır, ortam kopyası seçilir. `api.post` gövdesizken `Content-Type` göndermez (Fastify boş JSON gövdeyi 400'ler).
+- **GitHub issue'larından gelen arayüz işleri** (2026-11-20, rc.21): Body/Auth sekmelerinde içerik noktası (Body'de yalnızca
+  gönderilecek içerik varsa); anahtar/değer listelerinde **toplu düzenleme** (`anahtar:değer`, devre dışı satır `//`, form-data
+  dosya türü anahtardan korunur); sekmeler **sürükle-bırak** ile sıralanır (`moveTab`; masaüstünde `dragDropEnabled: false`, yoksa
+  WebView2 HTML5 sürüklemeyi yutar); gönderim sürerken yanıt panelinde ilerleme çubuğu + canlı sayaç ve **İptal** (UI `fetch`'i
+  `AbortController` ile keser, `execute.routes.ts` yanıt bağlantısı kapanınca executor'a `signal` geçirir, undici isteği
+  iptal olur, history'ye `execute.cancelled`); raw türlerine `text/xml`.
+- **form-data dosya alanı** (2026-11-20): `KeyValueItem.type: 'file'`, değer yerel dosya yolu; gönderimde diskten bellekle okunur
+  (streaming yok), history'ye içerik değil `<ad: N B>` yazılır; Postman dışa aktarımı `type: file` + `src`, cURL `--form k=@yol`;
+  Postman içe aktarımı dosya alanlarını hâlâ atlar (raporlar). **Güvenlik kuralı:** dosya alanı yalnızca kullanıcının gönderdiği
+  istekte (`ExecuteInput.body`) aynı yolla varsa okunur; pre-request script'i `rq.request.body` ile dosya satırı ekleyemez ya da
+  yolunu değiştiremez (`execute.formFileFromScript`), yol `{{değişken}}` ile çözülmez — aksi halde içe aktarılan bir koleksiyonun
+  script'i diskteki dosyaları dışarı gönderebilirdi (koruma kapatılarak sızma gösterildi, açıkken reddedildi).
 - **Üst bar sadeleştirmesi** (2026-11-13): "+ Yeni istek" kalktı (sekme + / Alt+T), ortam seçici + Ortamlar
   tek menü (Ortam yok / ortamlar / Ortamlar… / Değişkenler…), Ayarlar yalnızca simge, İçe aktar menüsü (Dosyadan… /
   Postman'dan çek…).
