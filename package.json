@@ -7,7 +7,7 @@
     "type": "git",
     "url": "git+https://github.com/reqster-dev/reqster.git"
   },
-  "homepage": "https://reqly.talhacigdem.tr",
+  "homepage": "https://reqster.talhacigdem.tr",
   "description": "Tamamen yerel çalışan, hafif ve veri gizliliği odaklı API istemcisi",
   "workspaces": [
     "packages/shared",

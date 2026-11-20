@@ -35,7 +35,7 @@ export const DEFAULT_SETTINGS = {
   'ui.language': 'auto' as UiLanguage,
   /**
    * Masaüstü kabuğu (Tauri) açılışta yeni sürüm denetlesin mi. Uygulamanın tek dış çağrısıdır
-   * (`reqly.talhacigdem.tr/updates`); gizlilik ilkesi gereği kullanıcı kapatabilir. Tarayıcıdan
+   * (`reqster.talhacigdem.tr/updates`, yedek olarak eski `reqly.talhacigdem.tr`); gizlilik ilkesi gereği kullanıcı kapatabilir. Tarayıcıdan
    * kullanımda etkisizdir.
    */
   'update.auto_check': true,

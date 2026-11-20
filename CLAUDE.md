@@ -9,8 +9,8 @@ Nihai hedef: telemetrisiz/hesapsız/bulutsuz, tek SQLite dosyasında yaşayan, P
 koleksiyonlarını içe aktarabilen ve sonunda Tauri ile paketlenecek bir masaüstü API istemcisi.
 
 **Ad değişikliği (1.0.0-rc.20):** eski adı **Reqly**'ydi (başka projelerle çakıştı). Bilerek ESKİ adla kalanlar:
-uygulama kimliği `tr.talhacigdem.reqly` (veri klasörü + updater zinciri), updater/site adresi `reqly.talhacigdem.tr` (yeni
-hostname gelene kadar), `reqly-wordmark.svg` (yeni wordmark çizilene kadar). Geri uyum: `REQLY_*` ortam değişkenleri
+uygulama kimliği `tr.talhacigdem.reqly` (veri klasörü + updater zinciri), eski site adresi `reqly.talhacigdem.tr` updater'da
+yedek endpoint olarak (rc.19 ve öncesi yalnızca ona bakar; site iki adresten de aynı içeriği sunar), `reqly-wordmark.svg` (yeni wordmark çizilene kadar). Geri uyum: `REQLY_*` ortam değişkenleri
 `server/src/envCompat.ts` (+ başlatıcıdaki eşi) ile `REQSTER_*`'a kopyalanır; `reqly.db` açılışta `reqster.db`'ye taşınır
 (`db/connection.ts`); `reqly-bundle` paketleri içe alınır (`shared` `isBundleFormat`); Windows kurulumu eski "Reqly" kaydını
 sessizce kaldırır, veri kalır (`src-tauri/windows/installer-hooks.nsh`). Kısaltma ve script API'si `rq.*` değişmedi.
@@ -56,7 +56,7 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   `windowsHide: true` ile açılır ki GUI'den gizli başlatılan konsol süreci yeni pencere açmasın.
   **Uygulama içi güncelleme** (`src-tauri/src/update.rs`, `tauri-plugin-updater`): READY'den 5 sn
   sonra ayrı görev `GET /api/settings` → `update.auto_check` (yoksa açık) ve `GET /api/internal/proxy-url`
-  (aktif proxy, yoksa doğrudan) okur, `https://reqly.talhacigdem.tr/updates/latest.json`'u denetler; yeni
+  (aktif proxy, yoksa doğrudan) okur, `https://reqster.talhacigdem.tr/updates/latest.json`'u (erişilemezse eski `reqly.talhacigdem.tr`'yi; Tauri endpoint'leri sırayla dener) denetler; yeni
   sürümde yerel diyalog "Şimdi kur / Sonra" ("Sonra" aynı sürüm için oturum boyunca susturur, denetim
   24 saatte bir yinelenir). Windows'ta NSIS `/P /UPDATE /R` (passive) ile kurulur ve uygulama kendini
   yeniden açar; sidecar `on_before_exit`'te öldürülür (kilitli `reqster-server.exe`); macOS'ta `.app`
@@ -110,7 +110,7 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   (temiz ağaç ve `main` zorunlu; `--no-push` ile yalnızca yerel; `npm version` bilerek kullanılmaz, bkz. betik).
 - **Docker / public site**: `deploy/Dockerfile` Linux paketini headless imaja koyar (container'da
   `REQSTER_HOST=0.0.0.0`, `REQSTER_AUTH=off`, veri `/data`; önüne kimlik doğrulayan bir kapı gerekir, README). İndirme ve
-  updater sitesi (`reqly.talhacigdem.tr`) bu depoda değildir; GitHub Release'lerinden beslenir. Bakımcı notları
+  updater sitesi (`reqster.talhacigdem.tr`; eski `reqly.talhacigdem.tr` aynı içeriği sunar) bu depoda değildir; GitHub Release'lerinden beslenir. Bakımcı notları
   (yerelde varsa): @../reqly-site/CLAUDE.md
 - Test altyapısı henüz yok. Doğrulama şu ana kadar `typecheck` + çalışan servera karşı curl ile
   uçtan uca API smoke testiyle yapılıyor (koleksiyon oluştur → değişken tanımla → execute → history kontrolü).
