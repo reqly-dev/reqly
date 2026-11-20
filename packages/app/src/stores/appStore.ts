@@ -61,7 +61,12 @@ export interface RequestTab {
   dirty: boolean;
   response: ExecuteResult | null;
   executing: boolean;
+  /** Gönderimin başladığı an (epoch ms); canlı sayaç için. `executing` false iken null */
+  executingSince: number | null;
 }
+
+/** Sekme başına süren gönderimin iptal denetleyicisi (state'e girmez, serileştirilemez) */
+const sendControllers = new Map<string, AbortController>();
 
 function emptyDraft(collectionId?: string, folderId?: string | null): Draft {
   return {
@@ -80,7 +85,7 @@ function emptyDraft(collectionId?: string, folderId?: string | null): Draft {
 }
 
 function newTabState(draft: Draft): RequestTab {
-  return { id: crypto.randomUUID(), draft, dirty: false, response: null, executing: false };
+  return { id: crypto.randomUUID(), draft, dirty: false, response: null, executing: false, executingSince: null };
 }
 
 interface AppState {
@@ -119,6 +124,8 @@ interface AppState {
   /** Ayrıştırılmış cURL'ü yeni kayıtsız sekmede açar (aktif sekme dokunulmamış boş taslaksa onun yerine) */
   openCurlInNewTab: (result: CurlImportResult) => void;
   send: () => Promise<void>;
+  /** Aktif sekmedeki süren gönderimi iptal eder */
+  cancelSend: () => void;
   /**
    * Aktif sekmeyi kaydeder: `target` verilirse `saveDraftAs` ile aynı (yeni kayıt);
    * yoksa kayıtlıysa PATCH, `collectionId`'si varsa POST. Hedef yoksa kaydetmez
@@ -384,19 +391,29 @@ export const useAppStore = create<AppState>((set, get) => {
         get().showNotice(t('notice.urlRequired'));
         return;
       }
-      patchTab(tab.id, { executing: true });
+      if (sendControllers.has(tab.id)) return;
+      const controller = new AbortController();
+      sendControllers.set(tab.id, controller);
+      patchTab(tab.id, { executing: true, executingSince: Date.now() });
       try {
-        const result = await api.post<ExecuteResult>('/execute', toExecuteInput(draft));
+        const result = await api.post<ExecuteResult>('/execute', toExecuteInput(draft), controller.signal);
         patchTab(tab.id, { response: result });
         if (result.unresolvedVariables.length > 0) {
           get().showNotice(t('notice.unresolvedVariables', { list: result.unresolvedVariables.join(', ') }));
         }
       } catch (err) {
-        get().showNotice(err instanceof Error ? err.message : String(err));
+        // Kullanıcı iptali hata değildir; sunucu bağlantı kopunca giden isteği zaten durdurur
+        if (controller.signal.aborted) get().showNotice(t('notice.requestCancelled'));
+        else get().showNotice(err instanceof Error ? err.message : String(err));
       } finally {
-        patchTab(tab.id, { executing: false });
+        sendControllers.delete(tab.id);
+        patchTab(tab.id, { executing: false, executingSince: null });
         void get().refreshHistory();
       }
+    },
+
+    cancelSend: () => {
+      sendControllers.get(selectActiveTab(get()).id)?.abort();
     },
 
     saveDraft: async (target) => {

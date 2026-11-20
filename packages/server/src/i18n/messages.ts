@@ -64,6 +64,7 @@ const MESSAGES = {
     tr: 'Açık tutulan bağlantı sunucu tarafından kapatılmıştı ({error}); {method} isteği yan etkisi olabileceği için otomatik yinelenmedi. Tekrar gönderin.',
     en: 'The kept-alive connection had been closed by the server ({error}); the {method} request was not retried automatically because it may have side effects. Send it again.',
   },
+  'execute.cancelled': { tr: 'İstek iptal edildi.', en: 'Request cancelled.' },
   'execute.preRequestError': { tr: 'Pre-request script hatası — {error}', en: 'Pre-request script error — {error}' },
   'execute.sourceRequest': { tr: 'İstek', en: 'Request' },
   'execute.sourceFolder': { tr: 'Klasör: {name}', en: 'Folder: {name}' },

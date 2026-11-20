@@ -387,6 +387,10 @@ export const tr = {
 
   // Store bildirimleri
   'notice.urlRequired': 'URL boş olamaz',
+  'notice.requestCancelled': 'İstek iptal edildi',
+  'request.cancel': 'İptal',
+  'request.cancel.title': 'Süren isteği iptal et',
+  'response.sending': 'Yanıt bekleniyor…',
   'notice.unresolvedVariables': 'Çözülemeyen değişkenler: {list}',
   'notice.requestSaved': 'İstek kaydedildi',
   'notice.invalidJsonFile': 'Dosya geçerli JSON değil',

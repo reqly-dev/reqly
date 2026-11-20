@@ -27,9 +27,10 @@ async function handle<T>(res: Response): Promise<T> {
 
 export const api = {
   get: <T>(path: string) => fetch(`${BASE}${path}`, { headers: headers(false) }).then((r) => handle<T>(r)),
-  post: <T>(path: string, body?: unknown) =>
+  post: <T>(path: string, body?: unknown, signal?: AbortSignal) =>
     fetch(`${BASE}${path}`, {
       method: 'POST',
+      signal,
       // Gövdesiz POST'ta (ör. /duplicate) Content-Type gönderilmez: Fastify boş JSON gövdeyi 400 ile reddeder
       headers: headers(body !== undefined),
       body: body !== undefined ? JSON.stringify(body) : undefined,

@@ -16,7 +16,7 @@ type Tab = 'params' | 'headers' | 'body' | 'auth' | 'scripts';
 
 export function RequestBuilder() {
   const tab = useAppStore(selectActiveTab);
-  const { updateDraft, send } = useAppStore();
+  const { updateDraft, send, cancelSend } = useAppStore();
   const [section, setSection] = useState<Tab>('params');
   const t = useT();
   const { draft, dirty, executing } = tab;
@@ -73,7 +73,7 @@ export function RequestBuilder() {
           }}
           onBlur={() => setRawUrl(null)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') void send();
+            if (e.key === 'Enter' && !executing) void send();
           }}
           onPaste={(e) => {
             // Yapıştırılan bir cURL komutuysa URL'ye yazılmaz, isteğe çevrilir
@@ -84,14 +84,15 @@ export function RequestBuilder() {
           }}
         />
         <CurlCopyMenu />
-        <button
-          className="send-btn"
-          title={t('request.send.title')}
-          onClick={() => void send()}
-          disabled={executing}
-        >
-          {executing ? t('request.sending') : t('request.send')}
-        </button>
+        {executing ? (
+          <button className="send-btn cancel" title={t('request.cancel.title')} onClick={cancelSend}>
+            {t('request.cancel')}
+          </button>
+        ) : (
+          <button className="send-btn" title={t('request.send.title')} onClick={() => void send()}>
+            {t('request.send')}
+          </button>
+        )}
       </div>
 
       <div className="tabs">

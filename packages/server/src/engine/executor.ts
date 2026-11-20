@@ -31,7 +31,7 @@ function hasScript(steps: ScriptChainStep[]): boolean {
   return steps.some((s) => s.script != null && s.script.trim() !== '');
 }
 
-export async function executeRequest(input: ExecuteInput): Promise<ExecuteResult> {
+export async function executeRequest(input: ExecuteInput, signal?: AbortSignal): Promise<ExecuteResult> {
   // Süre dökümü: hazırlık = toplam − scriptler − ağ; ağ adımları probe'dan
   const begin = now();
   const probe = new TimingProbe();
@@ -104,6 +104,11 @@ export async function executeRequest(input: ExecuteInput): Promise<ExecuteResult
       testResults,
       earlyTimings(),
     );
+  }
+
+  // Pre-request script sürerken iptal edildiyse istek hiç gönderilmez
+  if (signal?.aborted) {
+    return failResult(msg('execute.cancelled'), input, input.url, new Set(), scriptLogs, testResults, earlyTimings());
   }
 
   // Script'lerin mutasyona uğrattığı istek; bundan sonraki tüm akış buna göre işler
@@ -210,6 +215,7 @@ export async function executeRequest(input: ExecuteInput): Promise<ExecuteResult
         headers: Object.fromEntries(headers),
         body: bodyPayload,
         dispatcher,
+        signal,
       }),
     );
     probe.headersAt = now();
@@ -232,8 +238,9 @@ export async function executeRequest(input: ExecuteInput): Promise<ExecuteResult
     responseBody = Buffer.concat(chunks).subarray(0, maxBodyBytes).toString('utf8');
   } catch (err) {
     const raw = err instanceof Error ? err.message : String(err);
-    errorMessage =
-      (proxyHost ? describeProxyError(err, proxyHost) : undefined) ??
+    errorMessage = signal?.aborted
+      ? msg('execute.cancelled')
+      : (proxyHost ? describeProxyError(err, proxyHost) : undefined) ??
       // Havuzdan gelen bağlantı yanıtsız kapandı ve istek idempotent olmadığı için yinelenmedi
       (probe.headersAt == null && !probe.openedConnection && !probe.retried && isStaleSocketError(err)
         ? msg('execute.staleConnection', { error: raw, method: input.method })
