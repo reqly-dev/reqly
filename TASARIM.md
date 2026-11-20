@@ -678,11 +678,16 @@ iç transaction'lar savepoint). Paket biçimi dışa dönük sözleşmedir; alan
    rebinding'le aynı origin olan sayfa token'ı taşıyan HTML'i de okuyabilirdi.
    (b) **Origin denetimi** (POST/PUT/PATCH/DELETE): başka bir yerel sitenin (ör. `localhost:8080`) form/fetch ile
    durum değiştirmesini keser; SameSite çerezi port ayırmadığı için tek başına yetmez.
-   (c) **Oturum token'ı**: paketlenmiş başlatıcı 32 baytlık rastgele token üretir (`REQSTER_SESSION_TOKEN`), adres
-   `?reqster_token=` ile açılır, sunucu `HttpOnly; SameSite=Strict` çerez (`reqster_session_<port>`, aynı makinede iki örnek
-   çakışmasın diye portlu) kurup token'sız adrese yönlendirir; sonraki istekler çerez ya da `X-Reqster-Token` başlığı taşır.
-   Bu, paylaşılan makinedeki (Citrix/RDS) başka kullanıcıların 127.0.0.1 portuna erişmesini de engeller. Token
-   frontend koduna hiç girmez (HttpOnly), UI değişmedi. Geliştirme modunda token yoktur; Access arkasındaki
+   (c) **Oturum token'ı**: paketlenmiş başlatıcı 32 baytlık rastgele token üretir (`REQSTER_SESSION_TOKEN`) ve her
+   `/api` isteği onu `X-Reqster-Token` başlığında ya da `reqster_session_<port>` çerezinde (aynı makinede iki örnek
+   çakışmasın diye portlu) taşımalıdır. Sayfa ve statik dosyalar token istemez: veri taşımayan, herkese açık uygulama
+   kodudur. Adres `?reqster_token=` ile açılır; arayüz token'ı adresten alıp sekmenin sessionStorage'ına yazar, adresten
+   siler ve API'ye başlıkla yollar. Sunucu o ilk istekte `HttpOnly; SameSite=Lax` yedek çerezi de kurar (tarayıcıda elle
+   açılan yeni sekmeler için). Bu, paylaşılan makinedeki (Citrix/RDS) başka kullanıcıların ve başka yerel sitelerin API'yi
+   kullanmasını engeller; token'ı yalnızca aynı origin'deki sayfa okuyabilir, o da Host denetimiyle korunur.
+   *Neden çereze dayanmıyor (rc.22):* ilk tasarımda sayfa da çerez istiyor, token'lı adres `SameSite=Strict` çerezle
+   302 yönlendiriliyordu. macOS WKWebView kabuğun açtığı ilk gezinmede bu çerezi göndermediği için pencere her açılışta
+   401 gösterdi (rc.20/21). Çerezsiz bir tarayıcıda (Set-Cookie'yi silen aracıyla) eski akış 401, yenisi çalışır. Geliştirme modunda token yoktur; Access arkasındaki
    Docker imajı (`deploy/Dockerfile`) `REQSTER_AUTH=off` ile token'ı kapatır, Host denetimi açık kalır.
 3. Kullanıcı scriptleri yalnızca izole worker + `isolated-vm` içinde, zaman/bellek sınırlı ve ağ/dosya erişimsiz koşar.
 4. SQL yalnızca repository katmanında; her yazma işlemi transaction içinde; şema değişiklikleri yalnızca migration ile.

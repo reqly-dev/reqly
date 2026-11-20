@@ -10,11 +10,14 @@ import { msg } from '../i18n/context.js';
  *    `evil.example` → 127.0.0.1 çözülse bile tarayıcı `Host: evil.example` yollar ve reddedilir.
  *    Host başlığı hiç yoksa (HTTP/1.0 sağlık denetimi) tarayıcı kaynaklı olamayacağından geçer.
  * 2. **Origin** — durum değiştiren yöntemlerde `Origin` varsa adı aynı listede olmalı (CSRF).
- * 3. **Oturum token'ı** — `REQSTER_SESSION_TOKEN` verilmişse (paketlenmiş başlatıcı üretir) her istek
- *    `X-Reqster-Token` başlığı ya da `reqster_session_<port>` çerezi taşımalı. Çerez bir kez,
- *    `?reqster_token=<token>` ile açılan sayfada kurulur (kabuk/başlatıcı bu adresi açar) ve adres
- *    token'sız haline yönlendirilir. Aynı makinedeki başka kullanıcıların (Citrix/RDS) ya da başka
- *    yerel sitelerin sunucuyu kullanmasını engeller. Geliştirme modunda (token yok) yalnızca 1–2 geçerlidir.
+ * 3. **Oturum token'ı** — `REQSTER_SESSION_TOKEN` verilmişse (paketlenmiş başlatıcı üretir) her `/api` isteği
+ *    `X-Reqster-Token` başlığı ya da `reqster_session_<port>` çerezi taşımalı. Aynı makinedeki başka kullanıcıların
+ *    (Citrix/RDS) ya da başka yerel sitelerin sunucuyu kullanmasını engeller. Sayfa ve statik dosyalar (herkese açık
+ *    uygulama kodu, veri yok) token istemez: kabuk/başlatıcı `?reqster_token=<token>` adresini açar, arayüz token'ı
+ *    adresten alıp sessionStorage'a yazar, adresten siler ve API'ye başlıkla yollar (`app/src/lib/session.ts`).
+ *    O ilk istekte ayrıca çerez (SameSite=Lax) kurulur; tarayıcıda elle açılan yeni sekmeler için yedektir.
+ *    Eskiden sayfa da çerez istiyordu ve token'lı adres 302 ile yönlendiriliyordu: macOS WKWebView ilk açılışta
+ *    çerezi göndermediği için pencere 401 gösteriyordu (rc.20). Geliştirme modunda (token yok) yalnızca 1–2 geçerlidir.
  */
 
 const LOOPBACK_NAMES = ['127.0.0.1', 'localhost', '[::1]', '::1'];
@@ -100,25 +103,25 @@ export function registerLocalGuard(app: FastifyInstance): void {
     }
 
     const cookieName = `reqster_session_${req.socket.localPort ?? ''}`;
+    const url = new URL(req.url, 'http://local');
+    if (url.pathname !== '/api' && !url.pathname.startsWith('/api/')) {
+      // Sayfa/statik dosya: token istenmez. Token'lı ilk açılışta yedek çerez kurulur; yönlendirme yapılmaz,
+      // adresi arayüz temizler (bkz. dosya başı)
+      if (req.method === 'GET' && sameToken(url.searchParams.get(TOKEN_QUERY) ?? undefined, token)) {
+        reply
+          .header('Set-Cookie', `${cookieName}=${rawToken}; Path=/; HttpOnly; SameSite=Lax`)
+          .header('Cache-Control', 'no-store');
+      }
+      done();
+      return;
+    }
+
     const header = req.headers[TOKEN_HEADER];
     if (
       sameToken(typeof header === 'string' ? header : undefined, token) ||
       sameToken(readCookie(req.headers.cookie, cookieName), token)
     ) {
       done();
-      return;
-    }
-
-    // İlk açılış: ?reqster_token=… doğruysa çerezi kur ve adresi token'sız haline yönlendir
-    const url = new URL(req.url, 'http://local');
-    if (req.method === 'GET' && sameToken(url.searchParams.get(TOKEN_QUERY) ?? undefined, token)) {
-      url.searchParams.delete(TOKEN_QUERY);
-      reply
-        .code(302)
-        .header('Set-Cookie', `${cookieName}=${rawToken}; Path=/; HttpOnly; SameSite=Strict`)
-        .header('Cache-Control', 'no-store')
-        .header('Location', url.pathname + url.search)
-        .send();
       return;
     }
 

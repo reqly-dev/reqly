@@ -1,12 +1,13 @@
 import { getLanguage } from '../lib/i18n';
+import { sessionHeaders } from '../lib/session';
 
 const BASE = '/api';
 
 /** Her isteğe aktif UI dili eklenir; sunucu mesajlarını bu dilde üretecek (şimdilik yok sayar) */
 function headers(json: boolean): Record<string, string> {
   return json
-    ? { 'Content-Type': 'application/json', 'X-Reqster-Lang': getLanguage() }
-    : { 'X-Reqster-Lang': getLanguage() };
+    ? { 'Content-Type': 'application/json', 'X-Reqster-Lang': getLanguage(), ...sessionHeaders() }
+    : { 'X-Reqster-Lang': getLanguage(), ...sessionHeaders() };
 }
 
 async function handle<T>(res: Response): Promise<T> {
