@@ -14,8 +14,8 @@
  * ile açılan süreç stdout'a `REQSTER_READY http://127.0.0.1:<port>/` yazar, o porttan API cevap
  * verir ve stdin kapanınca (kabuk öldü) süreç kendi kendine çıkar.
  *
- * Yerel kapı bekçisi: yabancı Host 421, token'sız 401, yabancı Origin'li POST 403,
- * `?reqster_token=` ile açılış çerez kurup token'sız adrese yönlendirir.
+ * Yerel kapı bekçisi: yabancı Host 421, token'sız API 401 (sayfa token istemez), yabancı Origin'li POST 403,
+ * `?reqster_token=` ile açılan sayfa yönlendirmeden 200 döner ve yedek çerezi (SameSite=Lax) kurar.
  */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
@@ -143,8 +143,9 @@ try {
   // --- kapı bekçisi ---
   const anon = await fetch(`${BASE}/api/workspace`);
   check('token\'sız API isteği 401', anon.status === 401, `http ${anon.status}`);
+  // Sayfa ve statik dosyalar herkese açık uygulama kodudur; arayüz token'ı adresten alıp API'ye başlıkla yollar
   const anonHome = await fetch(`${BASE}/`);
-  check('token\'sız sayfa 401', anonHome.status === 401, `http ${anonHome.status}`);
+  check('token\'sız sayfa 200 (statik açık, API kapalı)', anonHome.status === 200, `http ${anonHome.status}`);
   const wrong = await fetch(`${BASE}/api/workspace`, { headers: { 'x-reqster-token': TOKEN + 'x' } });
   check('yanlış token 401', wrong.status === 401, `http ${wrong.status}`);
   // fetch Host başlığını ezmeye izin vermez; ham HTTP ile DNS rebinding'i taklit et
@@ -158,15 +159,15 @@ try {
   check('yabancı Origin\'li POST 403', csrf.status === 403, `http ${csrf.status}`);
   const boot = await fetch(`${BASE}/?reqster_token=${TOKEN}`, { redirect: 'manual' });
   const setCookie = boot.headers.get('set-cookie') ?? '';
+  const html = await boot.text();
   check(
-    '?reqster_token= çerez kurup / adresine yönlendirdi',
-    boot.status === 302 && boot.headers.get('location') === '/' && setCookie.startsWith('reqster_session_7357=') && /HttpOnly/i.test(setCookie),
-    `http ${boot.status} location=${boot.headers.get('location')} cookie=${setCookie.split('=')[0]}`,
+    '?reqster_token= sayfayı yönlendirmeden verdi ve yedek çerezi kurdu',
+    boot.status === 200 && html.includes('<div id="root"') && setCookie.startsWith('reqster_session_7357=') && /HttpOnly/i.test(setCookie) && /SameSite=Lax/i.test(setCookie),
+    `http ${boot.status} cookie=${setCookie.split('=')[0]}`,
   );
   const cookie = setCookie.split(';')[0];
-  const home = await fetch(`${BASE}/`, { headers: { cookie } });
-  const html = await home.text();
-  check('frontend aynı porttan sunuluyor (çerezle)', home.status === 200 && html.includes('<div id="root"'));
+  const wrongBoot = await fetch(`${BASE}/?reqster_token=${TOKEN}x`);
+  check('yanlış token\'lı açılış çerez kurmaz', !(wrongBoot.headers.get('set-cookie') ?? '').startsWith('reqster_session_'), `set-cookie: ${wrongBoot.headers.get('set-cookie') ? 'var' : 'yok'}`);
   const viaCookie = await fetch(`${BASE}/api/workspace`, { headers: { cookie } });
   check('çerezle API 200', viaCookie.status === 200, `http ${viaCookie.status}`);
 

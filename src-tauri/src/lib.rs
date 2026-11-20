@@ -16,6 +16,7 @@ use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 
+mod bundle_name;
 mod download;
 mod logging;
 mod update;
@@ -77,6 +78,11 @@ pub fn run() {
             match app.path().app_data_dir() {
                 Ok(dir) => logging::init(dir.join("logs"), app.package_info().version.to_string().as_str()),
                 Err(err) => crate::rlog!("[reqster] app_data_dir çözülemedi, dosya logu yok: {err}"),
+            }
+
+            // macOS: eski `Reqly.app` paketi `Reqster.app` olur ve uygulama yeni yoldan yeniden açılır
+            if bundle_name::adopt_new_bundle_name() {
+                std::process::exit(0);
             }
 
             // Ana pencere config'te `create: false`; indirme olayını yakalamak için (dışa aktarmada

@@ -1,5 +1,6 @@
 import { useAppStore } from '../stores/appStore';
 import { getLanguage, t } from './i18n';
+import { sessionHeaders } from './session';
 
 /** Masaüstü kabuğunda mı (sunucu sidecar modunda `index.html`'e basar) */
 export function isDesktopShell(): boolean {
@@ -32,8 +33,8 @@ export async function downloadFromApi(path: string, fallbackName: string, body?:
     method: body === undefined ? 'GET' : 'POST',
     headers:
       body === undefined
-        ? { 'X-Reqster-Lang': getLanguage() }
-        : { 'Content-Type': 'application/json', 'X-Reqster-Lang': getLanguage() },
+        ? { 'X-Reqster-Lang': getLanguage(), ...sessionHeaders() }
+        : { 'Content-Type': 'application/json', 'X-Reqster-Lang': getLanguage(), ...sessionHeaders() },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {

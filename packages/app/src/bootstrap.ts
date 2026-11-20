@@ -1,3 +1,4 @@
+import './lib/session'; // oturum token'ı adresten alınır; ilk API çağrısından önce
 import { initLanguage } from './lib/i18n';
 import { initTheme } from './lib/theme';
 

@@ -13,7 +13,7 @@ uygulama kimliği `tr.talhacigdem.reqly` (veri klasörü + updater zinciri), esk
 yedek endpoint olarak (rc.19 ve öncesi yalnızca ona bakar; site iki adresten de aynı içeriği sunar), `reqly-wordmark.svg` (yeni wordmark çizilene kadar). Geri uyum: `REQLY_*` ortam değişkenleri
 `server/src/envCompat.ts` (+ başlatıcıdaki eşi) ile `REQSTER_*`'a kopyalanır; `reqly.db` açılışta `reqster.db`'ye taşınır
 (`db/connection.ts`); `reqly-bundle` paketleri içe alınır (`shared` `isBundleFormat`); Windows kurulumu eski "Reqly" kaydını
-sessizce kaldırır, veri kalır (`src-tauri/windows/installer-hooks.nsh`). Kısaltma ve script API'si `rq.*` değişmedi.
+sessizce kaldırır, veri kalır (`src-tauri/windows/installer-hooks.nsh`). macOS'ta updater paketi yerinde değiştirdiği için `Reqly.app` adı kalıyordu: kabuk açılışta eski adlı paketten çalıştığını görürse onu `Reqster.app` yapıp `open -n` ile yeni yoldan yeniden açar (`src-tauri/src/bundle_name.rs`; App Translocation'da, hedef varsa ya da yazma izni yoksa yalnızca loglar). Kısaltma ve script API'si `rq.*` değişmedi.
 
 Mimari kararların gerekçeleriyle tam dökümü **TASARIM.md**'dedir; bu dosya onun operasyonel özetidir.
 Tasarım değişikliği gerektiren bir iş yapılırken TASARIM.md de güncellenmelidir.
@@ -397,9 +397,12 @@ connector'a değil isteğin `AsyncLocalStorage` bağlamına bağlanır (`withPro
 - **Yerel kapı bekçisi** (2026-11-16; TASARIM.md §8/2): `security/localGuard.ts` her istekte (dil hook'undan
   sonra) Host adını loopback (`127.0.0.1`/`localhost`/`[::1]`) + `REQSTER_ALLOWED_HOSTS` ile sınar (DNS rebinding → 421; Host
   yoksa geçer), durum değiştiren yöntemde yabancı `Origin`'i 403'ler, `REQSTER_SESSION_TOKEN` varsa `X-Reqster-Token` başlığı ya da
-  `reqster_session_<port>` çerezi ister (401). Token'ı paketlenmiş başlatıcı üretir (`REQSTER_AUTH=off` hariç; `deploy/Dockerfile`
-  kapatır, ad `REQSTER_ALLOWED_HOSTS` ile verilir); READY satırı ve taşınabilir modun açtığı adres `?reqster_token=` taşır, sunucu
-  çerezi kurup token'sız adrese 302 ile döner. Kabuk token'ı READY adresinden ayırır (`update::split_ready_url`), updater'ın
+  `reqster_session_<port>` çerezi ister (401) — **yalnızca `/api`**; sayfa/statik dosyalar token istemez. Token'ı paketlenmiş başlatıcı
+  üretir (`REQSTER_AUTH=off` hariç; `deploy/Dockerfile` kapatır, ad `REQSTER_ALLOWED_HOSTS` ile verilir); READY satırı ve taşınabilir
+  modun açtığı adres `?reqster_token=` taşır. Arayüz token'ı `app/src/lib/session.ts`'de adresten alır (sessionStorage, adresten
+  silinir; `bootstrap.ts` ilk yükler), `api/client.ts` ve `lib/download.ts` her isteğe `X-Reqster-Token` ekler; sunucu o ilk
+  istekte yönlendirmeden yedek çerez (`SameSite=Lax`) kurar. Çereze dayanmama nedeni: macOS WKWebView ilk açılışta çerezi
+  göndermediği için rc.20/21'de pencere 401 gösteriyordu (TASARIM.md §8/2). Kabuk token'ı READY adresinden ayırır (`update::split_ready_url`), updater'ın
   yerel çağrılarına başlık olarak ekler, loga yazmaz. Geliştirmede (`npm run dev`/`start`) token yok, Host/Origin denetimi açık.
   Sunucuya curl ile elle istek atarken paketli modda `-H "X-Reqster-Token: …"` gerekir. Duman testi kapıyı da sınar.
 - **Bağlantı yeniden kullanımı** (2026-11-16): `network.reuse_connections` (varsayılan açık, Ayarlar > Ağ).
