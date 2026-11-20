@@ -13,7 +13,7 @@ uygulama kimliği `tr.talhacigdem.reqly` (veri klasörü + updater zinciri), esk
 yedek endpoint olarak (rc.19 ve öncesi yalnızca ona bakar; site iki adresten de aynı içeriği sunar), `reqly-wordmark.svg` (yeni wordmark çizilene kadar). Geri uyum: `REQLY_*` ortam değişkenleri
 `server/src/envCompat.ts` (+ başlatıcıdaki eşi) ile `REQSTER_*`'a kopyalanır; `reqly.db` açılışta `reqster.db`'ye taşınır
 (`db/connection.ts`); `reqly-bundle` paketleri içe alınır (`shared` `isBundleFormat`); Windows kurulumu eski "Reqly" kaydını
-sessizce kaldırır, veri kalır (`src-tauri/windows/installer-hooks.nsh`). Kısaltma ve script API'si `rq.*` değişmedi.
+sessizce kaldırır, veri kalır (`src-tauri/windows/installer-hooks.nsh`). macOS'ta updater paketi yerinde değiştirdiği için `Reqly.app` adı kalıyordu: kabuk açılışta eski adlı paketten çalıştığını görürse onu `Reqster.app` yapıp `open -n` ile yeni yoldan yeniden açar (`src-tauri/src/bundle_name.rs`; App Translocation'da, hedef varsa ya da yazma izni yoksa yalnızca loglar). Kısaltma ve script API'si `rq.*` değişmedi.
 
 Mimari kararların gerekçeleriyle tam dökümü **TASARIM.md**'dedir; bu dosya onun operasyonel özetidir.
 Tasarım değişikliği gerektiren bir iş yapılırken TASARIM.md de güncellenmelidir.
