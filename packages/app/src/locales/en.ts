@@ -202,6 +202,7 @@ export const en: Record<MessageKey, string> = {
   'request.tab.body': 'Body',
   'request.tab.auth': 'Auth',
   'request.tab.scripts': 'Scripts',
+  'request.tab.hasContent': 'Has content',
   'request.params.keyPlaceholder': 'param',
   'request.headers.keyPlaceholder': 'Header-Name',
 

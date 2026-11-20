@@ -99,13 +99,29 @@ export function RequestBuilder() {
           [
             ['params', `${t('request.tab.params')}${countEnabled(draft.params)}`],
             ['headers', `${t('request.tab.headers')}${countEnabled(draft.headers)}`],
-            ['body', t('request.tab.body')],
-            ['auth', t('request.tab.auth')],
+            [
+              'body',
+              <>
+                {t('request.tab.body')}
+                {draft.body && draft.body.mode !== 'none' && (
+                  <span className="dirty-dot" title={t('request.tab.hasContent')} />
+                )}
+              </>,
+            ],
+            [
+              'auth',
+              <>
+                {t('request.tab.auth')}
+                {draft.auth && draft.auth.type !== 'none' && (
+                  <span className="dirty-dot" title={t('request.tab.hasContent')} />
+                )}
+              </>,
+            ],
             [
               'scripts',
               <>
                 {t('request.tab.scripts')}
-                {(draft.preRequestScript || draft.postResponseScript) && <span className="dirty-dot" />}
+                {(draft.preRequestScript || draft.postResponseScript) && <span className="dirty-dot" title={t('request.tab.hasContent')} />}
               </>,
             ],
           ] as Array<[Tab, ReactNode]>
