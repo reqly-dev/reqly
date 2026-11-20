@@ -1,5 +1,6 @@
 import type { KeyValueItem } from '@reqster/shared';
-import { X } from 'lucide-react';
+import { ListChecks, Rows3, X } from 'lucide-react';
+import { useState } from 'react';
 import { useT } from '../lib/i18n';
 import { iconProps } from '../lib/icons';
 import { VariableInput } from './VariableInput';
@@ -13,6 +14,29 @@ interface Props {
   collectionId?: string;
 }
 
+/** Toplu düzenleme metni: her satır `anahtar:değer`, devre dışı satırın başında `//` (Postman biçimi). */
+export function itemsToBulk(items: KeyValueItem[]): string {
+  return items.map((i) => `${i.enabled ? '' : '//'}${i.key}:${i.value}`).join('\n');
+}
+
+export function bulkToItems(text: string): KeyValueItem[] {
+  const items: KeyValueItem[] = [];
+  for (const raw of text.split(/\r?\n/)) {
+    let line = raw;
+    let enabled = true;
+    if (line.trimStart().startsWith('//')) {
+      enabled = false;
+      line = line.trimStart().slice(2);
+    }
+    if (line.trim() === '') continue;
+    const idx = line.indexOf(':');
+    const key = idx === -1 ? line : line.slice(0, idx);
+    const value = idx === -1 ? '' : line.slice(idx + 1);
+    items.push({ key: key.trim(), value: value.trim(), enabled });
+  }
+  return items;
+}
+
 /**
  * Anahtar/değer listesi. Altta her zaman boş bir "hayalet" satır durur; ona yazılmaya
  * başlanınca satır gerçek olur ve altına yenisi gelir (Postman gibi). Satırlar bilinçli
@@ -22,6 +46,7 @@ interface Props {
  */
 export function KeyValueEditor({ items, onChange, keyPlaceholder, valuePlaceholder, collectionId }: Props) {
   const t = useT();
+  const [bulk, setBulk] = useState<string | null>(null);
   const update = (index: number, patch: Partial<KeyValueItem>) => {
     if (index === items.length) {
       onChange([...items, { key: '', value: '', enabled: true, ...patch }]);
@@ -33,8 +58,41 @@ export function KeyValueEditor({ items, onChange, keyPlaceholder, valuePlacehold
 
   const rows: Array<KeyValueItem | null> = [...items, null];
 
+  if (bulk !== null) {
+    return (
+      <div className="kv-editor">
+        <div className="kv-bulk-bar">
+          <button
+            className="ghost-btn"
+            onClick={() => {
+              onChange(bulkToItems(bulk));
+              setBulk(null);
+            }}
+          >
+            <Rows3 {...iconProps} /> {t('kv.bulk.back')}
+          </button>
+        </div>
+        <textarea
+          className="kv-bulk"
+          value={bulk}
+          spellCheck={false}
+          placeholder={t('kv.bulk.placeholder')}
+          onChange={(e) => {
+            setBulk(e.target.value);
+            onChange(bulkToItems(e.target.value));
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="kv-editor">
+      <div className="kv-bulk-bar">
+        <button className="ghost-btn" onClick={() => setBulk(itemsToBulk(items))}>
+          <ListChecks {...iconProps} /> {t('kv.bulk.edit')}
+        </button>
+      </div>
       {rows.map((item, i) => {
         const ghost = item === null;
         return (

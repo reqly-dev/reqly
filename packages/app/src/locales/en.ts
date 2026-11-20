@@ -343,6 +343,9 @@ export const en: Record<MessageKey, string> = {
 
   'kv.value.placeholder': 'value ({{variable}} allowed)',
   'kv.removeRow': 'Remove row',
+  'kv.bulk.edit': 'Bulk edit',
+  'kv.bulk.back': 'Key-value edit',
+  'kv.bulk.placeholder': 'One key:value per line — prefix a line with // to disable it',
 
   'varTip.scope.environment': 'Environment',
   'varTip.scope.collection': 'Collection',

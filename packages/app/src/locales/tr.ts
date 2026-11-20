@@ -365,6 +365,9 @@ export const tr = {
   // Anahtar/değer düzenleyici
   'kv.value.placeholder': 'değer ({{degisken}} kullanılabilir)',
   'kv.removeRow': 'Satırı sil',
+  'kv.bulk.edit': 'Toplu düzenle',
+  'kv.bulk.back': 'Anahtar/değer düzenleyici',
+  'kv.bulk.placeholder': 'Her satır anahtar:değer — devre dışı satırın başına // koyun',
 
   // Değişken tooltip'i
   'varTip.scope.environment': 'Ortam',
