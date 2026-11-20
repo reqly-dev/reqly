@@ -228,7 +228,11 @@ export const en: Record<MessageKey, string> = {
   'body.formatFailed': 'Could not format: {error}',
   'body.raw.placeholder': '{"example": "body"}',
   'body.field.placeholder': 'field',
-  'body.formData.hint': 'Phase 1 supports text fields only; file fields are not available yet.',
+  'body.formData.hint': 'For a file field, enter the full path of a file on this computer; it is read from disk on every send.',
+  'kv.type.text': 'Text',
+  'kv.type.file': 'File',
+  'kv.type.title': 'Field type',
+  'kv.file.placeholder': 'file path (e.g. /home/me/report.pdf)',
 
   'scripts.type.aria': 'Script type',
   'scripts.pre': 'Pre-request',

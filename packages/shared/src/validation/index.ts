@@ -11,6 +11,7 @@ export const keyValueItemSchema = z.object({
   key: z.string(),
   value: z.string(),
   enabled: z.boolean(),
+  type: z.enum(['text', 'file']).optional(),
 });
 
 export const requestBodySchema = z.object({

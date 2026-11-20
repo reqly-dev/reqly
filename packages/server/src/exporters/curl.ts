@@ -57,7 +57,13 @@ export function exportCurl(input: CurlExportInput): CurlExportResult {
     for (const item of enabled(body.items ?? [])) bodyArgs.push(['--data-urlencode', `${v(item.key)}=${v(item.value)}`]);
   } else if (body?.mode === 'form-data') {
     // --form-string: değer `@`/`<` ile başlasa bile dosya sanılmaz
-    for (const item of enabled(body.items ?? [])) bodyArgs.push(['--form-string', `${v(item.key)}=${v(item.value)}`]);
+    for (const item of enabled(body.items ?? [])) {
+      bodyArgs.push(
+        item.type === 'file'
+          ? ['--form', `${v(item.key)}=@${v(item.value)}`]
+          : ['--form-string', `${v(item.key)}=${v(item.value)}`],
+      );
+    }
   }
 
   // Metot curl'ün kendi çıkarımıyla aynıysa yazılmaz (Postman'deki gibi)

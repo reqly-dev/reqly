@@ -59,6 +59,10 @@ const MESSAGES = {
   'validation.postmanApiKeyRequired': { tr: 'Postman API anahtarı boş olamaz', en: 'Postman API key must not be empty' },
 
   // ---- yürütme (engine/executor.ts, engine/scriptRunner.ts) ----
+  'execute.formFileUnreadable': {
+    tr: 'form-data dosya alanı "{key}" okunamadı ({path}): {error}',
+    en: 'form-data file field "{key}" could not be read ({path}): {error}',
+  },
   'execute.invalidUrl': { tr: 'Geçersiz URL: {url}', en: 'Invalid URL: {url}' },
   'execute.staleConnection': {
     tr: 'Açık tutulan bağlantı sunucu tarafından kapatılmıştı ({error}); {method} isteği yan etkisi olabileceği için otomatik yinelenmedi. Tekrar gönderin.',

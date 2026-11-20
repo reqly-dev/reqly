@@ -8,6 +8,8 @@ import {
   type ScriptLogEntry,
   type ScriptTestResult,
 } from '@reqster/shared';
+import { readFile } from 'node:fs/promises';
+import { basename, extname } from 'node:path';
 import { request as undiciRequest } from 'undici';
 import { getFolderChainLeafToRoot, resolveEffectiveAuth } from '../core/hierarchy.js';
 import { buildResolver, collectSecretValues } from '../core/variables/resolve.js';
@@ -25,6 +27,26 @@ import { now, TimingProbe } from './timing.js';
 
 function enabledItems(items: KeyValueItem[]): KeyValueItem[] {
   return items.filter((i) => i.enabled && i.key.trim() !== '');
+}
+
+const MIME_TYPES: Record<string, string> = {
+  '.json': 'application/json',
+  '.txt': 'text/plain',
+  '.csv': 'text/csv',
+  '.xml': 'application/xml',
+  '.html': 'text/html',
+  '.pdf': 'application/pdf',
+  '.zip': 'application/zip',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+};
+
+function mimeFor(path: string): string {
+  return MIME_TYPES[extname(path).toLowerCase()] ?? 'application/octet-stream';
 }
 
 function hasScript(steps: ScriptChainStep[]): boolean {
@@ -150,7 +172,9 @@ export async function executeRequest(input: ExecuteInput, signal?: AbortSignal):
   for (const [k, v] of extraQuery) url.searchParams.append(k, v);
 
   // --- Body ---
-  let bodyPayload: string | undefined;
+  let bodyPayload: string | Buffer | undefined;
+  /** Geçmişe yazılacak metin biçimi (dosya içeriği yerine yer tutucu) */
+  let historyBody: string | undefined;
   const body = liveRequest.body;
   if (body && input.method !== 'GET' && input.method !== 'HEAD') {
     if (body.mode === 'raw' && body.raw != null) {
@@ -168,15 +192,45 @@ export async function executeRequest(input: ExecuteInput, signal?: AbortSignal):
         headers.set('Content-Type', 'application/x-www-form-urlencoded');
       }
     } else if (body.mode === 'form-data') {
-      // Faz 1: yalnızca metin alanları; dosya alanları desteklenmiyor
       const boundary = `----reqster${Date.now().toString(16)}`;
-      const parts: string[] = [];
+      const chunks: Buffer[] = [];
+      const display: string[] = [];
+      const quote = (s: string) => s.replace(/\r|\n/g, ' ').replace(/"/g, '%22');
       for (const item of enabledItems(body.items ?? [])) {
-        parts.push(
-          `--${boundary}\r\nContent-Disposition: form-data; name="${interpolate(item.key, ctx)}"\r\n\r\n${interpolate(item.value, ctx)}\r\n`,
-        );
+        const name = quote(interpolate(item.key, ctx));
+        const value = interpolate(item.value, ctx);
+        if (item.type === 'file') {
+          // Dosya yürütme anında diskten okunur; geçmişe içerik değil yalnızca ad/boyut yazılır
+          const filePath = value.trim();
+          let data: Buffer;
+          try {
+            data = await readFile(filePath);
+          } catch (err) {
+            const reason = err instanceof Error ? err.message : String(err);
+            return failResult(
+              msg('execute.formFileUnreadable', { key: name, path: filePath, error: reason }),
+              input,
+              url.toString(),
+              ctx.unresolved,
+              scriptLogs,
+              testResults,
+              earlyTimings(),
+            );
+          }
+          const head = `--${boundary}\r\nContent-Disposition: form-data; name="${name}"; filename="${quote(basename(filePath))}"\r\nContent-Type: ${mimeFor(filePath)}\r\n\r\n`;
+          chunks.push(Buffer.from(head), data, Buffer.from('\r\n'));
+          display.push(`${head}<${basename(filePath)}: ${data.length} B>\r\n`);
+        } else {
+          const part = `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;
+          chunks.push(Buffer.from(part));
+          display.push(part);
+        }
       }
-      bodyPayload = `${parts.join('')}--${boundary}--\r\n`;
+      const tail = `--${boundary}--\r\n`;
+      chunks.push(Buffer.from(tail));
+      display.push(tail);
+      bodyPayload = Buffer.concat(chunks);
+      historyBody = display.join('');
       headers.set('Content-Type', `multipart/form-data; boundary=${boundary}`);
     }
   }
@@ -297,7 +351,7 @@ export async function executeRequest(input: ExecuteInput, signal?: AbortSignal):
     method: input.method,
     url: mask(url.toString()),
     requestHeaders: [...headers.entries()].map(([k, v]): [string, string] => [k, mask(v)]),
-    requestBody: bodyPayload != null ? mask(bodyPayload) : null,
+    requestBody: bodyPayload != null ? mask(historyBody ?? (bodyPayload as string)) : null,
     statusCode: status ?? null,
     responseHeaders,
     responseBody: errorMessage ? null : mask(responseBody),

@@ -417,7 +417,7 @@ connector'a değil isteğin `AsyncLocalStorage` bağlamına bağlanır (`withPro
   tek menü (Ortam yok / ortamlar / Ortamlar… / Değişkenler…), Ayarlar yalnızca simge, İçe aktar menüsü (Dosyadan… /
   Postman'dan çek…).
 
-Bilinen sınırlamalar: form-data'da dosya alanı yok;
+Bilinen sınırlamalar: form-data dosya alanı yerel yolla çalışır (dosya seçici yok, dosya her gönderimde diskten okunur, Postman içe aktarımında dosya yolları alınmaz);
 script log/test sonuçları history'de kalıcı değil (yalnızca o çalıştırmanın UI state'i);
 `isolated-vm@7` paketi Node ≥26 istiyor ama Node 24.15'te sorunsuz çalışıyor (bkz. `npm warn EBADENGINE`
 uyarısı — zararsız, göz ardı edilebilir).
@@ -442,7 +442,7 @@ Depo: `https://github.com/reqster-dev/reqster` (CI, Release'ler, katkılar).
 - [ ] OpenAPI import
 - [ ] Cookie yönetimi: `engine/cookie-jar.ts` + UI
 - [ ] Secret değerlerin OS keychain'e taşınması (tabloda yalnızca referans)
-- [ ] form-data dosya alanı desteği (multipart streaming)
+- [x] form-data dosya alanı (2026-11-20; yerel yol, bellekte multipart; kalan: dosya seçici, streaming)
 
 ### Birikmiş küçük işler (fazdan bağımsız)
 - [ ] Raw body editöründe `{{var}}` vurgusu (VariableInput overlay tekniğinin textarea'ya uyarlanması)
