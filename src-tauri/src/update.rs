@@ -268,8 +268,9 @@ fn truncate_chars(text: &str, max_chars: usize) -> String {
 
 /// İndirir (imza doğrulamalı), kurar ve yeniden başlatır. İlerleme pencere başlığına yazılır.
 ///
-/// - Windows: `download_and_install` NSIS'i `/P /UPDATE /R` ile açıp süreci sonlandırır,
-///   bu fonksiyon geri dönmez; `/R` kurulum bitince uygulamayı yeniden açar.
+/// - Windows: `download_and_install` NSIS'i `/S /UPDATE /R` (installMode `quiet`: pencere yok, kurulum
+///   kullanıcı hesabına olduğu için yönetici izni de istemez) ile açıp süreci sonlandırır, bu fonksiyon geri
+///   dönmez; `/R` kurulum bitince uygulamayı yeniden açar. Mod kurulu sürümün config'inden okunur.
 /// - macOS: .app yerine yenisi konur, ardından `app.restart()` (RunEvent::Exit → sidecar öldürülür).
 async fn install(app: &AppHandle, update: Update) {
     let window = app.get_webview_window(MAIN_WINDOW);

@@ -1,3 +1,4 @@
+#![cfg_attr(not(target_os = "macos"), allow(dead_code))] // yol kararı yalnızca macOS'ta çağrılır; diğer platformlarda testler kullanır
 //! macOS: rc.19 ve öncesi `Reqly.app` olarak kuruldu. Tauri updater paketi bulunduğu yerde değiştirdiği için
 //! ad değişikliğinden (rc.20) sonra da Finder/Launchpad'de `Reqly.app` kalıyordu. Açılışta paket hâlâ eski adla
 //! çalışıyorsa `Reqster.app` olarak yeniden adlandırılır ve uygulama yeni yoldan bir kez yeniden açılır (sonraki

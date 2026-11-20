@@ -53,7 +53,7 @@
         "https://reqly.talhacigdem.tr/updates/latest.json"
       ],
       "windows": {
-        "installMode": "passive"
+        "installMode": "quiet"
       }
     }
   }

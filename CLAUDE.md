@@ -58,7 +58,7 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   sonra ayrı görev `GET /api/settings` → `update.auto_check` (yoksa açık) ve `GET /api/internal/proxy-url`
   (aktif proxy, yoksa doğrudan) okur, `https://reqster.talhacigdem.tr/updates/latest.json`'u (erişilemezse eski `reqly.talhacigdem.tr`'yi; Tauri endpoint'leri sırayla dener) denetler; yeni
   sürümde yerel diyalog "Şimdi kur / Sonra" ("Sonra" aynı sürüm için oturum boyunca susturur, denetim
-  24 saatte bir yinelenir). Windows'ta NSIS `/P /UPDATE /R` (passive) ile kurulur ve uygulama kendini
+  24 saatte bir yinelenir). Windows'ta NSIS `/S /UPDATE /R` (`installMode: quiet`, kurulum penceresi yok; rc.24'ten önce passive ilerleme penceresi açılıyordu, mod kurulu sürümün config'inden okunduğu için ilk sessiz güncelleme rc.24 → sonrası) ile kurulur ve uygulama kendini
   yeniden açar; sidecar `on_before_exit`'te öldürülür (kilitli `reqster-server.exe`); macOS'ta `.app`
   değiştirilip `app.restart()`. `network.verify_tls=false` ise updater da sertifika doğrulamaz (paketi
   minisign imzası korur). Yükleyici türü URL uzantısından değil içerikten (PE/MSI sihirli baytı) anlaşılır;
