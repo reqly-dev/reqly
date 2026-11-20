@@ -106,6 +106,8 @@ interface AppState {
   newTab: (collectionId?: string, folderId?: string | null) => void;
   openRequest: (request: RequestModel) => void;
   setActiveTab: (id: string) => void;
+  /** Sekmeyi hedef sekmenin önüne (`after=true` ise arkasına) taşır; sekme kimlikleri değişmez */
+  moveTab: (id: string, targetId: string, after: boolean) => void;
   /** Kaydedilmemiş sekmede onay sorar; kapatıldıysa true */
   closeTab: (id: string) => Promise<boolean>;
   updateDraft: (patch: Partial<Draft>) => void;
@@ -321,6 +323,18 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     setActiveTab: (id) => set({ activeTabId: id }),
+
+    moveTab: (id, targetId, after) =>
+      set((s) => {
+        if (id === targetId) return s;
+        const moving = s.tabs.find((t) => t.id === id);
+        if (!moving) return s;
+        const rest = s.tabs.filter((t) => t.id !== id);
+        const targetIndex = rest.findIndex((t) => t.id === targetId);
+        if (targetIndex < 0) return s;
+        rest.splice(after ? targetIndex + 1 : targetIndex, 0, moving);
+        return rest.every((t, i) => t === s.tabs[i]) ? s : { tabs: rest };
+      }),
 
     closeTab: async (id) => {
       const tab = get().tabs.find((t) => t.id === id);
