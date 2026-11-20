@@ -33,6 +33,7 @@ Download the latest release from the [download page](https://reqster.talhacigdem
 | Platform | File | Notes |
 |---|---|---|
 | Windows | `Reqster_<version>_x64-setup.exe` | Per-user install, no admin rights; installs the Edge WebView2 runtime if missing |
+| Windows (installer, zipped) | `Reqster_<version>_x64-setup.zip` | If your network blocks `.exe` downloads: the same installer inside a zip |
 | Windows (portable) | `Reqster_<version>_x64-portable.zip` | No installation: unzip and run `Reqster\reqster.exe` (WebView2 must be present, as on Windows 10/11) |
 | macOS | `Reqster_<version>_aarch64.dmg` / `Reqster_<version>_x64.dmg` | Apple Silicon / Intel. Builds are not notarized yet: on first launch use System Settings → Privacy & Security → "Open Anyway" |
 | Linux | `Reqster-<version>-linux-x64.tar.gz` | Runs the server; open `http://127.0.0.1:7357` in a browser |

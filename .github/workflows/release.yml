@@ -1,6 +1,6 @@
 name: release
 
-# v1.2.3 tag → Linux tar.gz, Windows NSIS installer + portable zip, macOS dmg (Apple Silicon + Intel) and the
+# v1.2.3 tag → Linux tar.gz, Windows NSIS installer (+ the same installer zipped) + portable zip, macOS dmg (Apple Silicon + Intel) and the
 # Tauri updater packages with signatures, published as a GitHub Release. Manual run → the same files as a
 # workflow artifact, no release.
 #
@@ -99,6 +99,17 @@ jobs:
         run: |
           exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
           bash deploy/win-portable.sh "${APP_VERSION}" dist
+      # Same installer inside a zip, for networks that block .exe downloads. Unlike the portable zip it installs
+      # normally (WebView2 bootstrapper, Start menu, in-app updates). Only the .exe goes in; the .sig stays outside.
+      - name: Installer zip
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
+          set -euo pipefail
+          exe="Reqster_${APP_VERSION}_x64-setup.exe"
+          zipf="Reqster_${APP_VERSION}_x64-setup.zip"
+          test -f "dist/$exe"
+          (cd dist && 7z a -tzip -bso0 -bsp0 "$zipf" "$exe")
+          7z l "dist/$zipf" | grep -F "$exe"
       # Ham log'lar yalnızca oturum açmış kullanıcıya açık; düşen adımın son satırlarını herkese açık hata notu yap
       - name: Failure summary
         if: failure()
@@ -222,7 +233,7 @@ jobs:
           cat > notes.md <<EOF
           | Platform | File |
           |---|---|
-          | Windows | \`Reqster_${V}_x64-setup.exe\` (installer) · \`Reqster_${V}_x64-portable.zip\` (no installation, run \`Reqster\\reqster.exe\`) |
+          | Windows | \`Reqster_${V}_x64-setup.exe\` (installer) · \`Reqster_${V}_x64-setup.zip\` (the same installer in a zip, if your network blocks .exe) · \`Reqster_${V}_x64-portable.zip\` (no installation, run \`Reqster\\reqster.exe\`) |
           | macOS | \`Reqster_${V}_aarch64.dmg\` (Apple Silicon) · \`Reqster_${V}_x64.dmg\` (Intel) |
           | Linux | \`Reqster-${V}-linux-x64.tar.gz\` (server, open http://127.0.0.1:7357) |
 

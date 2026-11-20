@@ -99,7 +99,7 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   bekçisi); PR'larda ayrıca her commit'te `Signed-off-by` (DCO, CONTRIBUTING.md) denetimi. Secret kullanmaz.
   `release.yml` — `v1.2.3` etiketi → `linux` (tar.gz, duman testinden geçen dosyanın kendisi), `windows`
   (`windows-latest`'te yerli derleme: frontend `npm run build` ile önce derlenir çünkü package.mjs `npm`'i kabuksuz
-  çağırır ve Windows'ta `npm.cmd` çözülmez → `--skip-app-build`; NSIS kurulumu + `deploy/win-portable.sh` ile taşınabilir
+  çağırır ve Windows'ta `npm.cmd` çözülmez → `--skip-app-build`; NSIS kurulumu, aynı kurulumun zip'i (`_x64-setup.zip`, .exe indirmesi engelli ağlar için; içinde yalnızca exe) + `deploy/win-portable.sh` ile taşınabilir
   zip, zip yoksa 7-Zip), `macos` (`macos-latest` Apple Silicon: aarch64 yerli, x64 çapraz; isolated-vm x64 ön-derlemesi
   orada node-gyp ile üretilir) ve hepsi bitince `release` işi GitHub Release'i oluşturur (`gh release`, önsürümde
   `--prerelease`; yeniden koşturmada `upload --clobber`). Etiket sürümü `package.json` ile eşleşmezse `meta` düşer.

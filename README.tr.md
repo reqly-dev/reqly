@@ -32,6 +32,7 @@ Son sürümü [indirme sayfasından](https://reqster.talhacigdem.tr/download/lat
 | Platform | Dosya | Not |
 |---|---|---|
 | Windows | `Reqster_<sürüm>_x64-setup.exe` | Kullanıcı hesabına kurulur, yönetici hakkı gerekmez; Edge WebView2 yoksa indirir |
+| Windows (kurulum, zip içinde) | `Reqster_<sürüm>_x64-setup.zip` | Ağınız `.exe` indirmeyi engelliyorsa: aynı kurulum dosyası zip içinde |
 | Windows (taşınabilir) | `Reqster_<sürüm>_x64-portable.zip` | Kurulum yok: açıp `Reqster\reqster.exe`'yi çalıştırın (Windows 10/11'deki gibi WebView2 kurulu olmalı) |
 | macOS | `Reqster_<sürüm>_aarch64.dmg` / `Reqster_<sürüm>_x64.dmg` | Apple Silicon / Intel. Paketler henüz notarize değil: ilk açılışta Sistem Ayarları → Gizlilik ve Güvenlik → "Yine de Aç" |
 | Linux | `Reqster-<sürüm>-linux-x64.tar.gz` | Sunucuyu çalıştırır; tarayıcıda `http://127.0.0.1:7357` |
