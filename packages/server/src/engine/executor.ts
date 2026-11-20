@@ -196,12 +196,30 @@ export async function executeRequest(input: ExecuteInput, signal?: AbortSignal):
       const chunks: Buffer[] = [];
       const display: string[] = [];
       const quote = (s: string) => s.replace(/\r|\n/g, ' ').replace(/"/g, '%22');
+      // Dosya alanı yalnızca kullanıcının verdiği istekte aynen varsa okunur: pre-request script'i rq.request.body
+      // üzerinden dosya satırı ekleyip ya da yolunu değiştirip diskteki bir dosyayı dışarı gönderemesin (sandbox
+      // dosya erişimsizdir). Aynı nedenle yol {{değişken}} ile çözülmez; script değişkenleri değiştirebilir.
+      const userFilePaths = new Set(
+        (input.body?.mode === 'form-data' ? enabledItems(input.body.items ?? []) : [])
+          .filter((i) => i.type === 'file')
+          .map((i) => i.value),
+      );
       for (const item of enabledItems(body.items ?? [])) {
         const name = quote(interpolate(item.key, ctx));
-        const value = interpolate(item.value, ctx);
         if (item.type === 'file') {
+          if (!userFilePaths.has(item.value)) {
+            return failResult(
+              msg('execute.formFileFromScript', { key: name }),
+              input,
+              url.toString(),
+              ctx.unresolved,
+              scriptLogs,
+              testResults,
+              earlyTimings(),
+            );
+          }
           // Dosya yürütme anında diskten okunur; geçmişe içerik değil yalnızca ad/boyut yazılır
-          const filePath = value.trim();
+          const filePath = item.value.trim();
           let data: Buffer;
           try {
             data = await readFile(filePath);
@@ -221,7 +239,7 @@ export async function executeRequest(input: ExecuteInput, signal?: AbortSignal):
           chunks.push(Buffer.from(head), data, Buffer.from('\r\n'));
           display.push(`${head}<${basename(filePath)}: ${data.length} B>\r\n`);
         } else {
-          const part = `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;
+          const part = `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${interpolate(item.value, ctx)}\r\n`;
           chunks.push(Buffer.from(part));
           display.push(part);
         }

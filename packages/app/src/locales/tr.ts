@@ -208,7 +208,6 @@ export const tr = {
   'request.url.placeholder': 'https://api.ornek.com/v1/kaynak veya {{baseUrl}}/kaynak',
   'request.send': 'Gönder',
   'request.send.title': 'Gönder (Ctrl+Enter)',
-  'request.sending': 'Gönderiliyor…',
   'request.tab.params': 'Params',
   'request.tab.headers': 'Headers',
   'request.tab.body': 'Body',

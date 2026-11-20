@@ -17,11 +17,13 @@ interface Props {
 }
 
 /** Toplu düzenleme metni: her satır `anahtar:değer`, devre dışı satırın başında `//` (Postman biçimi). */
-export function itemsToBulk(items: KeyValueItem[]): string {
+function itemsToBulk(items: KeyValueItem[]): string {
   return items.map((i) => `${i.enabled ? '' : '//'}${i.key}:${i.value}`).join('\n');
 }
 
-export function bulkToItems(text: string): KeyValueItem[] {
+/** Metinde tür yazılmaz: aynı anahtarlı önceki satır dosya alanıysa tür korunur (form-data) */
+function bulkToItems(text: string, previous: KeyValueItem[]): KeyValueItem[] {
+  const fileKeys = new Set(previous.filter((i) => i.type === 'file').map((i) => i.key));
   const items: KeyValueItem[] = [];
   for (const raw of text.split(/\r?\n/)) {
     let line = raw;
@@ -34,7 +36,9 @@ export function bulkToItems(text: string): KeyValueItem[] {
     const idx = line.indexOf(':');
     const key = idx === -1 ? line : line.slice(0, idx);
     const value = idx === -1 ? '' : line.slice(idx + 1);
-    items.push({ key: key.trim(), value: value.trim(), enabled });
+    const item: KeyValueItem = { key: key.trim(), value: value.trim(), enabled };
+    if (fileKeys.has(item.key)) item.type = 'file';
+    items.push(item);
   }
   return items;
 }
@@ -67,7 +71,7 @@ export function KeyValueEditor({ items, onChange, keyPlaceholder, valuePlacehold
           <button
             className="ghost-btn"
             onClick={() => {
-              onChange(bulkToItems(bulk));
+              onChange(bulkToItems(bulk, items));
               setBulk(null);
             }}
           >
@@ -81,7 +85,7 @@ export function KeyValueEditor({ items, onChange, keyPlaceholder, valuePlacehold
           placeholder={t('kv.bulk.placeholder')}
           onChange={(e) => {
             setBulk(e.target.value);
-            onChange(bulkToItems(e.target.value));
+            onChange(bulkToItems(e.target.value, items));
           }}
         />
       </div>

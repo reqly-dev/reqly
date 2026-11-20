@@ -1,4 +1,4 @@
-import { HTTP_METHODS, type HttpMethod } from '@reqster/shared';
+import { HTTP_METHODS, type HttpMethod, type RequestBody } from '@reqster/shared';
 import { useState, type ReactNode } from 'react';
 import { useT } from '../../lib/i18n';
 import { applyUrlText, buildUrl, sameParams } from '../../lib/urlQuery';
@@ -13,6 +13,16 @@ import { saveActiveTab, saveActiveTabAs } from './SaveRequestDialog';
 import { ScriptsEditor } from './ScriptsEditor';
 
 type Tab = 'params' | 'headers' | 'body' | 'auth' | 'scripts';
+
+/** Body sekmesindeki nokta: seçili kipte gerçekten gönderilecek bir şey varsa (boş raw / boş liste sayılmaz) */
+function hasBodyContent(body: RequestBody | null | undefined): boolean {
+  if (!body) return false;
+  if (body.mode === 'raw') return (body.raw ?? '').trim() !== '';
+  if (body.mode === 'urlencoded' || body.mode === 'form-data') {
+    return (body.items ?? []).some((i) => i.enabled && i.key.trim() !== '');
+  }
+  return false;
+}
 
 export function RequestBuilder() {
   const tab = useAppStore(selectActiveTab);
@@ -104,7 +114,7 @@ export function RequestBuilder() {
               'body',
               <>
                 {t('request.tab.body')}
-                {draft.body && draft.body.mode !== 'none' && (
+                {hasBodyContent(draft.body) && (
                   <span className="dirty-dot" title={t('request.tab.hasContent')} />
                 )}
               </>,

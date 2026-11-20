@@ -63,6 +63,10 @@ const MESSAGES = {
     tr: 'form-data dosya alanı "{key}" okunamadı ({path}): {error}',
     en: 'form-data file field "{key}" could not be read ({path}): {error}',
   },
+  'execute.formFileFromScript': {
+    tr: 'form-data dosya alanı "{key}" isteğin kendisinde yok ya da yolu değişmiş; script\'ler dosya alanı ekleyemez veya yolunu değiştiremez.',
+    en: 'form-data file field "{key}" is not part of the request as saved, or its path was changed; scripts cannot add file fields or change their paths.',
+  },
   'execute.invalidUrl': { tr: 'Geçersiz URL: {url}', en: 'Invalid URL: {url}' },
   'execute.staleConnection': {
     tr: 'Açık tutulan bağlantı sunucu tarafından kapatılmıştı ({error}); {method} isteği yan etkisi olabileceği için otomatik yinelenmedi. Tekrar gönderin.',

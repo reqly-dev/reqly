@@ -196,7 +196,6 @@ export const en: Record<MessageKey, string> = {
   'request.url.placeholder': 'https://api.example.com/v1/resource or {{baseUrl}}/resource',
   'request.send': 'Send',
   'request.send.title': 'Send (Ctrl+Enter)',
-  'request.sending': 'Sending…',
   'request.tab.params': 'Params',
   'request.tab.headers': 'Headers',
   'request.tab.body': 'Body',
