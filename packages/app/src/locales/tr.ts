@@ -214,6 +214,7 @@ export const tr = {
   'request.tab.body': 'Body',
   'request.tab.auth': 'Auth',
   'request.tab.scripts': 'Scripts',
+  'request.tab.hasContent': 'İçerik var',
   'request.params.keyPlaceholder': 'param',
   'request.headers.keyPlaceholder': 'Header-Adı',
 
