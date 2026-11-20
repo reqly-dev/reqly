@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { DEFAULT_LANG, isLang, type Lang, type MessageKey, type MessageParams, t } from './messages.js';
 
 /**
- * İstek dili bağlamı. Fastify `onRequest` hook'u `X-Reqly-Lang` başlığını okuyup isteğin geri kalanını
+ * İstek dili bağlamı. Fastify `onRequest` hook'u `X-Reqster-Lang` başlığını okuyup isteğin geri kalanını
  * `runWithLang` içinde koşturur; route dışı katmanlar (engine, importers, scripting host) imza
  * değiştirmeden `msg()` ile o dili kullanır. Başlık yoksa ya da `tr|en` dışıysa Türkçe.
  *

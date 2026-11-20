@@ -1,7 +1,10 @@
-# Reqly
+# Reqster
 
 A lightweight, local-first API client — a privacy-focused Postman alternative.
 No account, no cloud, no telemetry: your collections, environments and history stay on your machine.
+
+*Reqster = request + tester.* Formerly **Reqly**: existing installs update in place, `.reqly.json` bundles still import
+and `REQLY_*` environment variables keep working.
 
 [Türkçe](README.tr.md) · [Download](https://reqly.talhacigdem.tr/download/latest/) · [Design notes (TR)](TASARIM.md)
 
@@ -15,7 +18,7 @@ No account, no cloud, no telemetry: your collections, environments and history s
 - Pre-request and post-response scripts in an isolated sandbox (`isolated-vm` in a separate process, time and memory
   limited, no network / file access) with a `pm.*` compatibility layer and `pm.sendRequest`
 - Postman collection / environment import (files or straight from the Postman API) and Postman v2.1 export,
-  a `.reqly.json` share bundle, cURL import / export (bash and Windows cmd)
+  a `.reqster.json` share bundle, cURL import / export (bash and Windows cmd)
 - Request history grouped by day, timing breakdown (DNS / TCP / TLS / TTFB / download)
 - Proxy profiles with bypass lists, TLS verification switch, connection reuse
 - Turkish and English UI, dark and light themes
@@ -25,17 +28,17 @@ No account, no cloud, no telemetry: your collections, environments and history s
 ## Install
 
 Download the latest release from the [download page](https://reqly.talhacigdem.tr/download/latest/) or from
-[GitHub Releases](https://github.com/reqly-dev/reqly/releases).
+[GitHub Releases](https://github.com/reqster-dev/reqster/releases).
 
 | Platform | File | Notes |
 |---|---|---|
-| Windows | `Reqly_<version>_x64-setup.exe` | Per-user install, no admin rights; installs the Edge WebView2 runtime if missing |
-| Windows (portable) | `Reqly_<version>_x64-portable.zip` | No installation: unzip and run `Reqly\reqly.exe` (WebView2 must be present, as on Windows 10/11) |
-| macOS | `Reqly_<version>_aarch64.dmg` / `Reqly_<version>_x64.dmg` | Apple Silicon / Intel. Builds are not notarized yet: on first launch use System Settings → Privacy & Security → "Open Anyway" |
-| Linux | `Reqly-<version>-linux-x64.tar.gz` | Runs the server; open `http://127.0.0.1:7357` in a browser |
+| Windows | `Reqster_<version>_x64-setup.exe` | Per-user install, no admin rights; installs the Edge WebView2 runtime if missing |
+| Windows (portable) | `Reqster_<version>_x64-portable.zip` | No installation: unzip and run `Reqster\reqster.exe` (WebView2 must be present, as on Windows 10/11) |
+| macOS | `Reqster_<version>_aarch64.dmg` / `Reqster_<version>_x64.dmg` | Apple Silicon / Intel. Builds are not notarized yet: on first launch use System Settings → Privacy & Security → "Open Anyway" |
+| Linux | `Reqster-<version>-linux-x64.tar.gz` | Runs the server; open `http://127.0.0.1:7357` in a browser |
 
-Data lives in a single SQLite file: `%APPDATA%\tr.talhacigdem.reqly\reqly.db` on Windows,
-`~/Library/Application Support/tr.talhacigdem.reqly/reqly.db` on macOS, `data/reqly.db` (or `REQLY_DATA_DIR`)
+Data lives in a single SQLite file: `%APPDATA%\tr.talhacigdem.reqly\reqster.db` on Windows,
+`~/Library/Application Support/tr.talhacigdem.reqly/reqster.db` on macOS, `data/reqster.db` (or `REQSTER_DATA_DIR`)
 otherwise. The desktop app checks for updates once a day; this is its only outgoing call and can be turned off in
 Settings → Updates.
 
@@ -67,8 +70,8 @@ all platforms are produced by GitHub Actions ([`.github/workflows`](.github/work
 
 ## Running on a server
 
-The Linux build can run headless (see [`deploy/Dockerfile`](deploy/Dockerfile)): set `REQLY_HOST=0.0.0.0` and add
-the public host name to `REQLY_ALLOWED_HOSTS`. **Put an authenticating reverse proxy in front of it.** Reqly is an
+The Linux build can run headless (see [`deploy/Dockerfile`](deploy/Dockerfile)): set `REQSTER_HOST=0.0.0.0` and add
+the public host name to `REQSTER_ALLOWED_HOSTS`. **Put an authenticating reverse proxy in front of it.** Reqster is an
 HTTP client and script runner without its own login; anyone who can reach it can use it as a proxy into your network.
 
 ## Contributing

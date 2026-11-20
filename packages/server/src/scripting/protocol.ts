@@ -1,5 +1,5 @@
 /** Host (ana süreç) ile script worker (child process) arasındaki IPC mesaj sözleşmesi. */
-import type { KeyValueItem, RequestBody } from '@reqly/shared';
+import type { KeyValueItem, RequestBody } from '@reqster/shared';
 import type { Lang } from '../i18n/messages.js';
 
 export type ScriptPhase = 'pre-request' | 'post-response';

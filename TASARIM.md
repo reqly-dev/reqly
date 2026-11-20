@@ -1,7 +1,12 @@
-# Reqly — Mimari Tasarım Dokümanı (TASARIM.md)
+# Reqster — Mimari Tasarım Dokümanı (TASARIM.md)
 
 > Tamamen yerel çalışan, hafif ve veri gizliliği odaklı bir Postman alternatifi.
 > Bu doküman fonksiyonel kod içermez; yalnızca mimari kuralları, veri şemasını ve best-practice'leri tanımlar.
+>
+> **Ad:** *Reqster = request + tester*; 1.0.0-rc.20'ye kadar adı **Reqly**'ydi. Ad değişikliği kullanıcı verisini ve
+> alışkanlıklarını kırmaz: uygulama kimliği (`tr.talhacigdem.reqly`) ve dolayısıyla veri klasörü ile güncelleme zinciri
+> aynı kalır, eski veritabanı dosyası, `REQLY_*` ortam değişkenleri ve `reqly-bundle` paketleri tanınır, script API'si
+> (`rq.*`, `pm.*`) değişmez.
 
 ---
 
@@ -43,7 +48,7 @@
 Monorepo (npm workspaces), üç paket: `app` (UI), `server` (backend), `shared` (ortak tipler).
 
 ```
-reqly/
+reqster/
 ├── package.json                  # workspace kökü
 ├── TASARIM.md
 ├── packages/
@@ -100,14 +105,14 @@ reqly/
 │           └── components/       # Özellikten bağımsız ortak UI parçaları
 │
 └── data/                         # Çalışma zamanı (git'e girmez)
-    └── reqly.db                  # Tek SQLite dosyası (kullanıcı dizininde tutulur)
+    └── reqster.db                  # Tek SQLite dosyası (kullanıcı dizininde tutulur)
 ```
 
 **Kurallar:**
 - `shared` hiçbir pakete bağımlı olamaz; `app` ve `server` yalnızca `shared`'a bağımlı olabilir.
 - SQL sorguları yalnızca `db/repositories/` içinde yazılır; `core/` katmanı repository arayüzleriyle konuşur.
 - `api/` route dosyaları iş mantığı içermez; doğrulama + `core` çağrısı + yanıt şekillendirme ile sınırlıdır.
-- Veritabanı dosyası üretimde işletim sisteminin kullanıcı veri dizinine yazılır (`%APPDATA%/reqly/`, `~/.local/share/reqly/`), proje dizinine değil.
+- Veritabanı dosyası üretimde işletim sisteminin kullanıcı veri dizinine yazılır (`%APPDATA%/reqster/`, `~/.local/share/reqster/`), proje dizinine değil.
 
 ---
 
@@ -325,7 +330,7 @@ yeni oluşturduğu anahtar da yalnızca yereldir: dosyaya kullanıcı "Paylaş" 
 
 #### 4.5.2 Dizin düzeni
 
-Bir **çalışma alanı dizini** vardır: varsayılan `<REQLY_DATA_DIR>/workspace/`, ayarlardan (`storage.workspace_dir`)
+Bir **çalışma alanı dizini** vardır: varsayılan `<REQSTER_DATA_DIR>/workspace/`, ayarlardan (`storage.workspace_dir`)
 herhangi bir klasöre — tipik olarak bir Git deposunun içine — taşınabilir. Uygulama Git komutu çalıştırmaz; depo
 işlemleri kullanıcının kendi aracıyla yapılır (Faz 2'de salt-okur durum gösterimi düşünülebilir).
 
@@ -337,7 +342,7 @@ işlemleri kullanıcının kendi aracıyla yapılır (Faz 2'de salt-okur durum g
     Test.env.yml
   collections/
     Kullanıcı API/
-      reqly.collection.yml       # koleksiyon ayarları + değişkenler; dizini koleksiyon yapan işaret
+      reqster.collection.yml       # koleksiyon ayarları + değişkenler; dizini koleksiyon yapan işaret
       Kullanıcı listesi.req.yml
       Yönetim/
         _folder.yml              # klasör ayarları (yoksa varsayılanlar)
@@ -399,10 +404,10 @@ description: |
   Auth alanlarında düz parola yazmak kullanıcının kararıdır; arayüz `{{değişken}}` + secret değişken önerir.
 - `body.mode`: `none | raw | urlencoded | form-data`; urlencoded/form-data `items:` listesi (params ile aynı biçim).
 
-Koleksiyon (`reqly.collection.yml`) — biçim sürümü yalnızca burada tutulur:
+Koleksiyon (`reqster.collection.yml`) — biçim sürümü yalnızca burada tutulur:
 
 ```yaml
-reqly: 1                  # dosya biçimi sürümü; bilinmeyen büyük sürüm → salt-okur + uyarı
+reqster: 1                  # dosya biçimi sürümü; bilinmeyen büyük sürüm → salt-okur + uyarı
 id: 0193a1f0-…
 name: Kullanıcı API
 auth: { type: bearer, token: "{{token}}" }
@@ -445,15 +450,15 @@ yeni kimlikle yazılır (uygulama kendiliğinden depoyu kirletmez).
 #### 4.5.5 Tek seferlik geçiş (paket C)
 
 Yeni migration, açılışta `collections/folders/requests` ve koleksiyon/ortam değişkenlerini çalışma alanına yazar:
-paylaşılan değerler dosyaya, secret değerler `local_values`'a, aktif ortam `settings`'e. Önce `reqly.db` yedeklenir
-(`reqly.pre-files.db`), dosyalar hazırlık dizininde üretilip yerine konur, sonra tablolar boşaltılır. Geçiş raporu
+paylaşılan değerler dosyaya, secret değerler `local_values`'a, aktif ortam `settings`'e. Önce `reqster.db` yedeklenir
+(`reqster.pre-files.db`), dosyalar hazırlık dizininde üretilip yerine konur, sonra tablolar boşaltılır. Geçiş raporu
 (kaç koleksiyon/istek, ad çakışmasıyla yeniden adlandırılanlar) ilk açılışta gösterilir. Geçiş başarısızsa DB'ye
 dokunulmaz, uygulama eski tablolarla değil hata ekranıyla açılır (yedekten dönüş talimatıyla).
 
 #### 4.5.6 Import / export / paylaşım paketi
 
-Postman ve `.reqly.json` içe aktarımı aynı iç modeli üretip dosya deposuna yazar (§8/6 değişmez). Export değişmez.
-Dosya tabanlı koleksiyon zaten paylaşılabilir olduğu için `.reqly.json` paketi Git kullanmayan ekipler için kalır.
+Postman ve `.reqster.json` içe aktarımı aynı iç modeli üretip dosya deposuna yazar (§8/6 değişmez). Export değişmez.
+Dosya tabanlı koleksiyon zaten paylaşılabilir olduğu için `.reqster.json` paketi Git kullanmayan ekipler için kalır.
 
 #### 4.5.7 Bağımlılık
 
@@ -570,9 +575,9 @@ düzenlenir; backend bunları `PATCH /api/collections/:id` ve `/api/folders/:id`
 ### 5.4 Paketlenmiş Modda Worker
 
 Dağıtım paketinde (`launcher/package.mjs`) sunucu ve worker ayrı esbuild bundle'larıdır ve
-`process.execPath`, Node SEA ile üretilen `Reqly.exe`'dir. SEA ikilisi kendisine verilen script
+`process.execPath`, Node SEA ile üretilen `Reqster.exe`'dir. SEA ikilisi kendisine verilen script
 yolunu değil her zaman gömülü başlatıcıyı çalıştırdığı için `fork(worker-entry)` kullanılamaz;
-host, aynı exe'yi `REQLY_WORKER_MODE=1` ortam değişkeni ve `ipc` kanalıyla `spawn` eder,
+host, aynı exe'yi `REQSTER_WORKER_MODE=1` ortam değişkeni ve `ipc` kanalıyla `spawn` eder,
 başlatıcı bu değişkeni görünce `resources/worker.cjs`'yi yükler. Tehdit modeli değişmez:
 worker yine ayrı bir süreçtir, DB/ağ/dosya erişimi yoktur, çökmesi sunucuyu etkilemez.
 
@@ -587,7 +592,7 @@ worker yine ayrı bir süreçtir, DB/ağ/dosya erişimi yoktur, çökmesi sunucu
 
 ### 6.2 Alan Eşleme Tablosu
 
-| Postman v2.x | Reqly şeması | Not |
+| Postman v2.x | Reqster şeması | Not |
 |---|---|---|
 | `info.name`, `info.description` | `collections.name/description` | |
 | `item[]` (içinde `item[]` olan) | `folders` satırı | Özyinelemeli: iç içe klasörler `parent_id` zinciriyle kurulur |
@@ -618,7 +623,7 @@ Her import sonunda kullanıcıya özet dönülür:
 kullanıcının Postman API anahtarı (`X-Api-Key`) yalnızca isteğin gövdesinde yaşar (saklanmaz, loglanmaz, hata mesajına
 girmez). Envanter `GET /workspaces` → `GET /workspaces/{id}` ile workspace'e göre gruplanır; seçilen koleksiyonlar
 `GET /collections/{uid}` ile v2.1 olarak çekilip **aynı** dönüştürme hattına verilir (ayrı bir eşleme yoktur), ortamlar
-`GET /environments/{uid}`, workspace global'leri `GET /workspaces/{id}/global-variables` → Reqly global'leri (`secret`
+`GET /environments/{uid}`, workspace global'leri `GET /workspaces/{id}/global-variables` → Reqster global'leri (`secret`
 tipi `is_secret`, `enabled` korunur; aynı anahtar birden fazla workspace'te → sonuncu kazanır, uyarı). Her öğe kendi
 transaction'ında; tek öğe hatası diğerlerini durdurmaz ve `failed[]`'e düşer; anahtar reddi (401/403) bütün işlemi keser.
 429'da bir kez beklenip yeniden denenir. Çağrılar aktif proxy ve ağ ayarlarından geçer.
@@ -632,11 +637,11 @@ port/path/query`, `{{var}}` parçaları olduğu gibi) hem `raw` (yalnızca etkin
 `query[]`'ye taşınır), `header[]`/`query[]`/`urlencoded[]` yalnızca kapalıyken `disabled: true`, raw body
 `options.raw.language` içerik tipinden (json/xml/html/javascript/text), form-data yalnızca `type: "text"`, auth
 `null` (devral) → alan yok, `none` → `noauth`, script'ler `event[]` (`exec` satır dizisi). Postman'ın tanımadığı hiçbir
-alan üretilmez; Reqly'ye özgü meta gerekmedi. **Secret kuralı:** varsayılan dışa aktarımda secret değişkenler
+alan üretilmez; Reqster'ye özgü meta gerekmedi. **Secret kuralı:** varsayılan dışa aktarımda secret değişkenler
 anahtarı ve `type: "secret"` ile ama **boş değerle** çıkar; değer yalnızca kullanıcı açıkça isterse (`secrets=1`,
 `includeSecrets=true`) yazılır. İçe alan taraf `type: "secret"`i `is_secret=1` yapar ve boş gelen secret'ları raporda
-adlarıyla uyarır. **Paylaşım paketi (`.reqly.json`, `ReqlyBundle`):** birden çok koleksiyon (v2.1 belgeleri olduğu
-gibi) + ortamlar (Postman environment) + global'ler (`values[]`) tek dosyada; `format: "reqly-bundle"`, `version: 1`,
+adlarıyla uyarır. **Paylaşım paketi (`.reqster.json`, `ReqsterBundle`):** birden çok koleksiyon (v2.1 belgeleri olduğu
+gibi) + ortamlar (Postman environment) + global'ler (`values[]`) tek dosyada; `format: "reqster-bundle"`, `version: 1`,
 `exportedAt`, `app`, `secretsIncluded`. İçe aktarım (`importers/bundle.ts`) parçaları mevcut Postman importer'ına verir
 (ayrı eşleme yok) ve hepsini **tek transaction**'da yazar: bir parça bozuksa hiçbir şey yazılmaz (§6.1 atomiklik,
 iç transaction'lar savepoint). Paket biçimi dışa dönük sözleşmedir; alan ekleme geriye dönük uyumlu, kıran değişiklik
@@ -652,7 +657,7 @@ iç transaction'lar savepoint). Paket biçimi dışa dönük sözleşmedir; alan
   Sürümleme kararı (2026-11-10): 0.x sürümleri Node SEA tabanlı bağımsız paket + tarayıcı "app modu"
   ile çıkar (`launcher/`); **v1.0.0 Tauri ile** çıkar, bu paket o zaman sidecar üretimine dönüşür.
   **Uygulandı (2026-11-11):** `src-tauri/` Tauri 2 kabuğu. Mimari: kabuk, Node sunucusunu sidecar olarak
-  (`REQLY_SIDECAR=1 REQLY_PORT=0`) başlatır, sunucunun stdout'a yazdığı `REQLY_READY <url>` satırını
+  (`REQSTER_SIDECAR=1 REQSTER_PORT=0`) başlatır, sunucunun stdout'a yazdığı `REQSTER_READY <url>` satırını
   bekler ve pencereyi o adrese yönlendirir; frontend aynı porttan sunulduğu için CORS yoktur ve Tauri
   IPC'ye gerek kalmaz (izin listesi boş). Kapanışta sidecar öldürülür; kabuk çökerse sidecar stdin'in
   kapandığını görüp kendini kapatır. Windows paketi (NSIS) Linux CI runner'ında `cargo-xwin` ile çapraz
@@ -669,16 +674,16 @@ iç transaction'lar savepoint). Paket biçimi dışa dönük sözleşmedir; alan
 2. Backend yalnızca `127.0.0.1`'e bind edilir; her istekte rastgele üretilmiş yerel bir oturum token'ı doğrulanır (aynı makinedeki başka süreçlerin/sitelerin API'yi kullanmasını engeller — DNS rebinding/CSRF koruması).
    **Uygulandı (2026-11-16, `server/src/security/localGuard.ts`)** — üç katman:
    (a) **Host denetimi** asıl DNS rebinding korumasıdır: saldırgan alan adı 127.0.0.1'e çözülse de tarayıcı
-   `Host: saldırgan.alan` yollar → 421. İzinli adlar loopback + `REQLY_ALLOWED_HOSTS`. Token tek başına yetmezdi:
+   `Host: saldırgan.alan` yollar → 421. İzinli adlar loopback + `REQSTER_ALLOWED_HOSTS`. Token tek başına yetmezdi:
    rebinding'le aynı origin olan sayfa token'ı taşıyan HTML'i de okuyabilirdi.
    (b) **Origin denetimi** (POST/PUT/PATCH/DELETE): başka bir yerel sitenin (ör. `localhost:8080`) form/fetch ile
    durum değiştirmesini keser; SameSite çerezi port ayırmadığı için tek başına yetmez.
-   (c) **Oturum token'ı**: paketlenmiş başlatıcı 32 baytlık rastgele token üretir (`REQLY_SESSION_TOKEN`), adres
-   `?reqly_token=` ile açılır, sunucu `HttpOnly; SameSite=Strict` çerez (`reqly_session_<port>`, aynı makinede iki örnek
-   çakışmasın diye portlu) kurup token'sız adrese yönlendirir; sonraki istekler çerez ya da `X-Reqly-Token` başlığı taşır.
+   (c) **Oturum token'ı**: paketlenmiş başlatıcı 32 baytlık rastgele token üretir (`REQSTER_SESSION_TOKEN`), adres
+   `?reqster_token=` ile açılır, sunucu `HttpOnly; SameSite=Strict` çerez (`reqster_session_<port>`, aynı makinede iki örnek
+   çakışmasın diye portlu) kurup token'sız adrese yönlendirir; sonraki istekler çerez ya da `X-Reqster-Token` başlığı taşır.
    Bu, paylaşılan makinedeki (Citrix/RDS) başka kullanıcıların 127.0.0.1 portuna erişmesini de engeller. Token
    frontend koduna hiç girmez (HttpOnly), UI değişmedi. Geliştirme modunda token yoktur; Access arkasındaki
-   Docker imajı (`deploy/Dockerfile`) `REQLY_AUTH=off` ile token'ı kapatır, Host denetimi açık kalır.
+   Docker imajı (`deploy/Dockerfile`) `REQSTER_AUTH=off` ile token'ı kapatır, Host denetimi açık kalır.
 3. Kullanıcı scriptleri yalnızca izole worker + `isolated-vm` içinde, zaman/bellek sınırlı ve ağ/dosya erişimsiz koşar.
 4. SQL yalnızca repository katmanında; her yazma işlemi transaction içinde; şema değişiklikleri yalnızca migration ile.
 5. Secret değişkenler UI'da maskelenir, history ve export'a asla düz metin yazılmaz.
@@ -695,6 +700,6 @@ iç transaction'lar savepoint). Paket biçimi dışa dönük sözleşmedir; alan
     yalnızca masaüstü kabuğu yapar, sürüm bilgisi dışında veri göndermez, kurmadan önce sorar. Kabuk
     DB'ye erişmediği için aktif proxy'nin kimlik bilgisi dahil URL'ini `GET /api/internal/proxy-url`
     ucundan alır (yalnızca kabuk içindir; kullanıcıya açık proxy API'si parolayı asla döndürmez).
-11. **Dil (tr/en)**: UI her isteğe `X-Reqly-Lang` yazar; sunucu kullanıcıya görünen tüm metinleri (`{error}`, zod ayrıntıları,
+11. **Dil (tr/en)**: UI her isteğe `X-Reqster-Lang` yazar; sunucu kullanıcıya görünen tüm metinleri (`{error}`, zod ayrıntıları,
     yürütme/script/import mesajları) `server/src/i18n/messages.ts` sözlüğünden bu dilde üretir, başlık yoksa Türkçe; shared
     zod şemaları mesaj yerine anahtar taşır, isolate'a dil `__meta.language` ile girer. Kodda sabit kullanıcı metni yazılmaz.

@@ -1,4 +1,4 @@
-import type { KeyValueItem } from '@reqly/shared';
+import type { KeyValueItem } from '@reqster/shared';
 
 /**
  * URL kutusu ↔ Params tablosu eşlemesi. Veri modeli değişmez: `draft.url`

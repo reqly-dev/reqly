@@ -1,8 +1,8 @@
-# Reqly Tauri 2 derleme imajı — Linux runner'da hem Linux (deb/appimage) hem Windows (NSIS setup.exe,
+# Reqster Tauri 2 derleme imajı — Linux runner'da hem Linux (deb/appimage) hem Windows (NSIS setup.exe,
 # cargo-xwin ile MSVC çapraz derleme) paketi üretir. Uygulama çalıştırmaz; komut dışarıdan verilir:
-#   docker run --rm -u 1000:1000 -e HOME=/tmp/h -v "$PWD":/w reqly-tauri-builder \
+#   docker run --rm -u 1000:1000 -e HOME=/tmp/h -v "$PWD":/w reqster-tauri-builder \
 #     npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc
-# Build: docker build -f deploy/tauri-builder.Dockerfile -t reqly-tauri-builder deploy/
+# Build: docker build -f deploy/tauri-builder.Dockerfile -t reqster-tauri-builder deploy/
 # (context'ten hiçbir dosya kopyalanmaz.) Yerel derleme içindir; sürüm paketlerini GitHub Actions üretir.
 # NSIS 3.11: Debian bookworm'ün nsis paketi 3.08 ve Tauri'nin şablonundaki Include/Win/RestartManager.nsh
 # onda yok ("could not find" ile düşüyor). makensis kaynaktan derlenir; Stubs/Plugins/Include resmî

@@ -1,5 +1,5 @@
-import type { CollectionTree } from '@reqly/shared';
-import { hierarchyPatchSchema, nameSchema } from '@reqly/shared';
+import type { CollectionTree } from '@reqster/shared';
+import { hierarchyPatchSchema, nameSchema } from '@reqster/shared';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {

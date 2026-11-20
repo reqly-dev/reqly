@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, type SettingKey, type Settings, type SettingValue } from '@reqly/shared';
+import { DEFAULT_SETTINGS, type SettingKey, type Settings, type SettingValue } from '@reqster/shared';
 import { getDb } from '../connection.js';
 
 export function getSetting<K extends SettingKey>(key: K): Settings[K] {

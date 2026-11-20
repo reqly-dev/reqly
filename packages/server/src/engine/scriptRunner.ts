@@ -1,4 +1,4 @@
-import type { ScriptLogEntry, ScriptTestResult } from '@reqly/shared';
+import type { ScriptLogEntry, ScriptTestResult } from '@reqster/shared';
 import { getActiveEnvironment } from '../db/repositories/environments.js';
 import { newId } from '../db/ids.js';
 import { getRequest } from '../db/repositories/requests.js';

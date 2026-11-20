@@ -6,9 +6,10 @@ import type {
   KeyValueItem,
   RequestBody,
   RequestModel,
-  ReqlyBundle,
+  ReqsterBundle,
   VariableModel,
-} from '@reqly/shared';
+} from '@reqster/shared';
+import { BUNDLE_FORMAT } from '@reqster/shared';
 import { randomUUID } from 'node:crypto';
 import { getCollection, listCollections } from '../db/repositories/collections.js';
 import { getEnvironment, listEnvironments } from '../db/repositories/environments.js';
@@ -21,7 +22,7 @@ import { appVersion } from '../paths.js';
 /**
  * Postman Collection v2.1 dışa aktarımı — `importers/postman-v2.ts`'nin tersi (TASARIM.md §6.2 eşlemesi,
  * simetri kuralı §6.4). Hedef: import → export → import döngüsü kayıpsız olsun. Yalnızca Postman'ın
- * tanıdığı alanlar üretilir; Reqly'ye özgü hiçbir ek alan gerekmedi (Reqly veri modeli v2.1'in alt kümesi).
+ * tanıdığı alanlar üretilir; Reqster'ye özgü hiçbir ek alan gerekmedi (Reqster veri modeli v2.1'in alt kümesi).
  * `includeSecrets=false` → secret değişkenler anahtarı ve `type: "secret"` ile ama boş değerle gider.
  */
 
@@ -191,7 +192,7 @@ function convertBody(body: RequestBody | null): PmExportBody | undefined {
     case 'urlencoded':
       return { mode: 'urlencoded', urlencoded: keyValues(body.items ?? []) };
     case 'form-data':
-      // Reqly'de dosya alanı yok; hepsi metin alanı
+      // Reqster'de dosya alanı yok; hepsi metin alanı
       return { mode: 'formdata', formdata: keyValues(body.items ?? []).map((f) => ({ ...f, type: 'text' })) };
     default:
       return undefined;
@@ -207,7 +208,7 @@ function queryString(params: PmExportKeyValue[]): string {
 }
 
 /**
- * Reqly'nin düz URL'i + params → Postman'ın yapılandırılmış `url` nesnesi. `raw` esastır (importer onu
+ * Reqster'nin düz URL'i + params → Postman'ın yapılandırılmış `url` nesnesi. `raw` esastır (importer onu
  * okur); protocol/host/port/path Postman'ın UI'ı için en iyi çabayla ayrıştırılır, `{{var}}` parçaları
  * olduğu gibi kalır (Postman da `{{baseUrl}}`'i host olarak yazar).
  */
@@ -349,11 +350,11 @@ export function exportEnvironment(environmentId: string, options: ExportSecretsO
       enabled: v.enabled,
     })),
     _postman_variable_scope: 'environment',
-    _postman_exported_using: `Reqly/${appVersion()}`,
+    _postman_exported_using: `Reqster/${appVersion()}`,
   };
 }
 
-export function exportGlobals(workspaceId: string, options: ExportSecretsOption): NonNullable<ReqlyBundle['globals']> {
+export function exportGlobals(workspaceId: string, options: ExportSecretsOption): NonNullable<ReqsterBundle['globals']> {
   return {
     values: listVariables('global', workspaceId).map((v) => ({
       key: v.key,
@@ -365,13 +366,13 @@ export function exportGlobals(workspaceId: string, options: ExportSecretsOption)
 }
 
 /** Paylaşım paketi: seçilen koleksiyonlar + ortamlar + (istenirse) global'ler, tek JSON */
-export function buildBundle(input: BundleExportInput, workspaceId: string): ReqlyBundle {
+export function buildBundle(input: BundleExportInput, workspaceId: string): ReqsterBundle {
   const options: ExportSecretsOption = { includeSecrets: input.includeSecrets };
   return {
-    format: 'reqly-bundle',
+    format: BUNDLE_FORMAT,
     version: 1,
     exportedAt: new Date().toISOString(),
-    app: `reqly/${appVersion()}`,
+    app: `reqster/${appVersion()}`,
     secretsIncluded: input.includeSecrets,
     collections: input.collectionIds.map((id) => exportCollection(id, options)),
     environments: input.environmentIds.map((id) => exportEnvironment(id, options)),

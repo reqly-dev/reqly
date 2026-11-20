@@ -1,4 +1,4 @@
-import type { KeyValueItem } from '@reqly/shared';
+import type { KeyValueItem } from '@reqster/shared';
 import { X } from 'lucide-react';
 import { useT } from '../lib/i18n';
 import { iconProps } from '../lib/icons';

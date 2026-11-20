@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Reqly",
+  "productName": "Reqster",
   "version": "../package.json",
   "identifier": "tr.talhacigdem.reqly",
   "build": {
@@ -12,7 +12,7 @@
       {
         "label": "main",
         "create": false,
-        "title": "Reqly",
+        "title": "Reqster",
         "width": 1280,
         "height": 800,
         "minWidth": 960,
@@ -40,7 +40,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["binaries/reqly-server"],
+    "externalBin": ["binaries/reqster-server"],
     "resources": ["resources"]
   },
   "plugins": {

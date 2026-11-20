@@ -1,4 +1,4 @@
-import type { AuthConfig } from '@reqly/shared';
+import type { AuthConfig } from '@reqster/shared';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { VariableInput } from '../../components/VariableInput';

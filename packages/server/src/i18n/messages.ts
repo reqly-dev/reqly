@@ -33,8 +33,8 @@ const MESSAGES = {
     en: 'Request from another site was rejected',
   },
   'security.unauthorized': {
-    tr: 'Oturum doğrulanamadı. Reqly\'yi uygulama penceresinden ya da başlatıcının açtığı adresten açın.',
-    en: 'Session could not be verified. Open Reqly from its app window or the address opened by the launcher.',
+    tr: 'Oturum doğrulanamadı. Reqster\'yi uygulama penceresinden ya da başlatıcının açtığı adresten açın.',
+    en: 'Session could not be verified. Open Reqster from its app window or the address opened by the launcher.',
   },
   'duplicate.suffix': { tr: 'kopya', en: 'copy' },
   'error.collectionNotFound': { tr: 'Koleksiyon bulunamadı', en: 'Collection not found' },
@@ -220,8 +220,8 @@ const MESSAGES = {
   'sandbox.expectAbove': { tr: "beklenen: {expected}'den buyuk, gelen: {actual}", en: 'expected: greater than {expected}, got: {actual}' },
   'sandbox.expectBelow': { tr: "beklenen: {expected}'den kucuk, gelen: {actual}", en: 'expected: less than {expected}, got: {actual}' },
   'sandbox.pmUnsupported': {
-    tr: '{path} desteklenmiyor. Bu Reqly script API alt kumesinde yok; rq.* kullanin.',
-    en: '{path} is not supported. It is not part of the Reqly script API subset; use rq.*.',
+    tr: '{path} desteklenmiyor. Bu Reqster script API alt kumesinde yok; rq.* kullanin.',
+    en: '{path} is not supported. It is not part of the Reqster script API subset; use rq.*.',
   },
   'sandbox.pmHeadersReadOnly': {
     tr: 'pm.request.headers.{op} post-response fazinda kullanilamaz: istek gonderildi, pm.request salt-okunur',
@@ -268,10 +268,10 @@ const MESSAGES = {
   'import.graphqlDowngraded': { tr: '"{item}": graphql body raw JSON\'a indirgendi', en: '"{item}": graphql body downgraded to raw JSON' },
   'import.unknownBodyMode': { tr: '"{item}": bilinmeyen body modu "{mode}" atlandı', en: '"{item}": unknown body mode "{mode}" skipped' },
 
-  // ---- Reqly paylaşım paketi (importers/bundle.ts) ----
+  // ---- Reqster paylaşım paketi (importers/bundle.ts) ----
   'import.invalidBundle': {
-    tr: 'Geçersiz Reqly paketi: format "reqly-bundle" ve version 1 bekleniyor',
-    en: 'Invalid Reqly bundle: expected format "reqly-bundle" and version 1',
+    tr: 'Geçersiz Reqster paketi: format "reqster-bundle" ve version 1 bekleniyor',
+    en: 'Invalid Reqster bundle: expected format "reqster-bundle" and version 1',
   },
   'import.bundleFailed': {
     tr: 'Paket içe aktarılamadı, hiçbir şey yazılmadı: {reason}',
@@ -288,7 +288,7 @@ const MESSAGES = {
   'curl.unterminatedQuote': { tr: 'cURL komutunda kapanmamış tırnak var', en: 'The cURL command has an unterminated quote' },
   'curl.trailingIgnored': { tr: 'Komutun devamı yok sayıldı: {text}', en: 'Rest of the command was ignored: {text}' },
   'curl.unknownOption': { tr: 'Tanınmayan seçenek yok sayıldı: {flag}', en: 'Unknown option ignored: {flag}' },
-  'curl.optionIgnored': { tr: '{flag} isteğe aktarılmadı (Reqly ayarlarından yönetilir ya da karşılığı yok)', en: '{flag} was not imported (managed in Reqly settings or has no equivalent)' },
+  'curl.optionIgnored': { tr: '{flag} isteğe aktarılmadı (Reqster ayarlarından yönetilir ya da karşılığı yok)', en: '{flag} was not imported (managed in Reqster settings or has no equivalent)' },
   'curl.missingValue': { tr: '{flag} seçeneğinin değeri eksik', en: 'Option {flag} is missing its value' },
   'curl.fileArgSkipped': { tr: '{flag} {value}: dosyadan okuma aktarılmadı, içeriği elle girin', en: '{flag} {value}: reading from a file was not imported, enter the content manually' },
   'curl.formFileSkipped': { tr: 'form-data dosya alanı "{key}" aktarılmadı; dosya alanı henüz desteklenmiyor', en: 'form-data file field "{key}" was not imported; file fields are not supported yet' },
@@ -304,7 +304,7 @@ const MESSAGES = {
   'curl.multipleUrls': { tr: 'Komutta birden çok URL var; yalnızca ilki alındı: {url}', en: 'The command has several URLs; only the first was used: {url}' },
   'curl.dataAndForm': { tr: '-d ile -F birlikte verilmiş; yalnızca form alanları alındı', en: '-d and -F were both given; only the form fields were used' },
   'curl.unsupportedMethod': { tr: 'Desteklenmeyen HTTP metodu: {method}', en: 'Unsupported HTTP method: {method}' },
-  'curl.bodyOnGet': { tr: '{method} isteğinde gövde var; Reqly {method} isteğinde gövde göndermez', en: 'The {method} request has a body; Reqly does not send a body with {method}' },
+  'curl.bodyOnGet': { tr: '{method} isteğinde gövde var; Reqster {method} isteğinde gövde göndermez', en: 'The {method} request has a body; Reqster does not send a body with {method}' },
   'curl.exportScriptsNotRun': {
     tr: 'Pre-request script\'ler çalıştırılmadı; komut script\'lerin yapacağı değişiklikleri içermez',
     en: 'Pre-request scripts were not run; the command does not include changes they would make',

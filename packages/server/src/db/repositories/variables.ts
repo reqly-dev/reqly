@@ -1,4 +1,4 @@
-import type { VariableModel, VariableScope } from '@reqly/shared';
+import type { VariableModel, VariableScope } from '@reqster/shared';
 import { getDb } from '../connection.js';
 import { newId } from '../ids.js';
 

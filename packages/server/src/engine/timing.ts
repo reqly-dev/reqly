@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Socket } from 'node:net';
-import type { ExecuteTimings } from '@reqly/shared';
+import type { ExecuteTimings } from '@reqster/shared';
 import type { buildConnector } from 'undici';
 
 /**

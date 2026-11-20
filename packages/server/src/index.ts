@@ -1,5 +1,7 @@
+// Eski REQLY_* ortam değişkenlerini REQSTER_* adlarına taşır; diğer importlardan ÖNCE değerlendirilmeli.
+import './envCompat.js';
 import fastifyStatic from '@fastify/static';
-import { SERVER_HOST, SERVER_PORT } from '@reqly/shared';
+import { SERVER_HOST, SERVER_PORT } from '@reqster/shared';
 import Fastify from 'fastify';
 import { existsSync, readFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
@@ -28,11 +30,11 @@ const app = Fastify({
   bodyLimit: 50 * 1024 * 1024, // büyük Postman export dosyaları için
 });
 
-// İstek dili: UI her isteğe `X-Reqly-Lang: tr|en` yazar; yoksa Türkçe. Hook'un `done`'ı
+// İstek dili: UI her isteğe `X-Reqster-Lang: tr|en` yazar; yoksa Türkçe. Hook'un `done`'ı
 // AsyncLocalStorage bağlamı içinde çağrılır, böylece gövde ayrıştırma, route ve altındaki tüm
 // async zincir (engine, importers, script host) `msg()` ile aynı dili görür (bkz. i18n/context.ts).
 app.addHook('onRequest', (req, _reply, done) => {
-  runWithLang(parseLangHeader(req.headers['x-reqly-lang']), done);
+  runWithLang(parseLangHeader(req.headers['x-reqster-lang']), done);
 });
 
 // Host / Origin / oturum token'ı denetimi (DNS rebinding + CSRF, TASARIM.md §8/2). Dil hook'undan
@@ -71,7 +73,7 @@ app.register(
  * dışa aktarmayı "Kaydet…" olarak sunar, sonucu kabuktan gelen olayla bildirir.
  */
 function renderIndexHtml(template: string, theme: string, language: 'tr' | 'en' | null): string {
-  const shell = process.env.REQLY_SIDECAR === '1' ? ' data-shell="desktop"' : '';
+  const shell = process.env.REQSTER_SIDECAR === '1' ? ' data-shell="desktop"' : '';
   return template.replace(/<html\b([^>]*)>/, (_m, attrs: string) => {
     if (!language) return `<html${attrs} data-theme="${theme}"${shell}>`;
     const rest = attrs.replace(/\s+lang="[^"]*"/, ''); // şablondaki sabit lang="tr" yerine kayıtlı dil
@@ -124,16 +126,16 @@ function pinnedLanguage(): 'tr' | 'en' | null {
 }
 
 /**
- * Dinlenecek port. `REQLY_PORT` verilmişse onu kullanır: `0` → işletim sistemi boş bir port
- * seçer (Tauri sidecar modu; gerçek port `REQLY_READY` satırıyla kabuğa bildirilir).
+ * Dinlenecek port. `REQSTER_PORT` verilmişse onu kullanır: `0` → işletim sistemi boş bir port
+ * seçer (Tauri sidecar modu; gerçek port `REQSTER_READY` satırıyla kabuğa bildirilir).
  * Verilmemişse varsayılan `SERVER_PORT` (7357).
  */
 function resolvePort(): number {
-  const raw = process.env.REQLY_PORT;
+  const raw = process.env.REQSTER_PORT;
   if (raw === undefined || raw === '') return SERVER_PORT;
   const port = Number(raw);
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
-    throw new Error(`REQLY_PORT geçersiz: "${raw}" (0–65535 arası bir tam sayı olmalı; 0 = dinamik port)`);
+    throw new Error(`REQSTER_PORT geçersiz: "${raw}" (0–65535 arası bir tam sayı olmalı; 0 = dinamik port)`);
   }
   return port;
 }
@@ -153,21 +155,21 @@ async function main(): Promise<void> {
   getDefaultWorkspace(); // ilk açılışta workspace'i garanti et
   await registerStaticFrontend();
   // Gizlilik sınırı (TASARIM.md §8): yalnızca loopback'e bağlan
-  // Varsayılan yalnızca loopback (yerel araç). Container'da REQLY_HOST=0.0.0.0 ile dışa açılır;
+  // Varsayılan yalnızca loopback (yerel araç). Container'da REQSTER_HOST=0.0.0.0 ile dışa açılır;
   // bu durumda önüne kimlik doğrulayan bir katman (Cloudflare Access) konmalıdır (TASARIM.md §8).
-  const host = process.env.REQLY_HOST || SERVER_HOST;
+  const host = process.env.REQSTER_HOST || SERVER_HOST;
   const port = resolvePort();
   await app.listen({ host, port });
-  // Dinamik portta (REQLY_PORT=0) gerçek port ancak listen'dan sonra bilinir
+  // Dinamik portta (REQSTER_PORT=0) gerçek port ancak listen'dan sonra bilinir
   const address = app.server.address() as AddressInfo | null;
   const actualPort = address?.port ?? port;
-  console.log(`reqly server → http://${host}:${actualPort}`);
+  console.log(`reqster server → http://${host}:${actualPort}`);
   // Kabuk (Tauri) için hazır sinyali: tek satır, sabit önek. Host 0.0.0.0 olsa bile kabuk
   // sunucuya hep loopback'ten ulaşır, bu yüzden URL'de 127.0.0.1 kalır.
   // Oturum token'ı varsa adres onu taşır: kabuk bu adresi açınca sunucu çerezi kurar (security/localGuard.ts).
-  const token = process.env.REQLY_SESSION_TOKEN;
+  const token = process.env.REQSTER_SESSION_TOKEN;
   const query = token ? `?${TOKEN_QUERY}=${encodeURIComponent(token)}` : '';
-  process.stdout.write(`REQLY_READY http://127.0.0.1:${actualPort}/${query}\n`);
+  process.stdout.write(`REQSTER_READY http://127.0.0.1:${actualPort}/${query}\n`);
 
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.once(signal, shutdown);
@@ -175,7 +177,7 @@ async function main(): Promise<void> {
 
   // Sidecar modu: kabuk stdin'i pipe olarak açık tutar; kabuk çökerse (stdin kapanır)
   // sunucu yetim kalmasın diye kendini kapatır.
-  if (process.env.REQLY_SIDECAR === '1') {
+  if (process.env.REQSTER_SIDECAR === '1') {
     process.stdin.resume();
     process.stdin.once('end', shutdown);
     process.stdin.once('close', shutdown);

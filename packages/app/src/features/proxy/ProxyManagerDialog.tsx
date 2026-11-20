@@ -1,4 +1,4 @@
-import type { ProxyPatch, ProxyProfile, ProxyUpsert } from '@reqly/shared';
+import type { ProxyPatch, ProxyProfile, ProxyUpsert } from '@reqster/shared';
 import { Pencil, Plus, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { T } from '../../components/T';

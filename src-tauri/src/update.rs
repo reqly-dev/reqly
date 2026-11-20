@@ -1,7 +1,7 @@
 //! Uygulama içi güncelleme.
 //!
 //! Frontend Tauri IPC kullanmadığı için akışın tamamı burada, Rust tarafındadır: sidecar
-//! `REQLY_READY` olduktan sonra ayrı bir async görev `update.auto_check` ayarına bakar, açıksa
+//! `REQSTER_READY` olduktan sonra ayrı bir async görev `update.auto_check` ayarına bakar, açıksa
 //! `plugins.updater.endpoints`'teki `latest.json`'u okur ve yeni sürüm varsa yerel bir diyalog
 //! gösterir ("Şimdi kur" / "Sonra"). "Sonra" denen sürüm bu oturumda bir daha sorulmaz; uygulama
 //! açık kaldığı sürece denetim günde bir sessizce yinelenir. Tam sessiz kurulum yoktur.
@@ -28,7 +28,7 @@ const LOCAL_HTTP_TIMEOUT: Duration = Duration::from_secs(5);
 const UPDATER_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 /// Diyalogda gösterilen sürüm notlarının en fazla uzunluğu (karakter).
 const NOTES_MAX_CHARS: usize = 300;
-const WINDOW_TITLE: &str = "Reqly";
+const WINDOW_TITLE: &str = "Reqster";
 
 /// Sidecar'daki ayarların denetimi ilgilendiren kısmı (`GET /api/settings`, düz anahtarlar).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,13 +61,13 @@ impl CheckSettings {
     }
 }
 
-/// READY adresini (`http://127.0.0.1:<port>/?reqly_token=<t>`) taban adres + oturum token'ına ayırır.
-/// Token yalnızca yerel API çağrılarında `X-Reqly-Token` başlığıyla kullanılır, loglanmaz.
+/// READY adresini (`http://127.0.0.1:<port>/?reqster_token=<t>`) taban adres + oturum token'ına ayırır.
+/// Token yalnızca yerel API çağrılarında `X-Reqster-Token` başlığıyla kullanılır, loglanmaz.
 pub(crate) fn split_ready_url(ready: &str) -> Option<(String, Option<String>)> {
     let url = Url::parse(ready).ok()?;
     let token = url
         .query_pairs()
-        .find(|(k, _)| k == "reqly_token")
+        .find(|(k, _)| k == "reqster_token")
         .map(|(_, v)| v.into_owned());
     let mut base = url;
     base.set_query(None);
@@ -87,10 +87,10 @@ pub(crate) fn schedule_checks(app: AppHandle, server_url: String, token: Option<
     tauri::async_runtime::spawn(async move {
         // "Sonra" denen sürüm; aynı sürüm için bu oturumda tekrar sorulmaz.
         let mut declined: Option<String> = None;
-        rlog!("[reqly] güncelleme: görev başladı, {} sn sonra ilk denetim", FIRST_CHECK_DELAY.as_secs());
+        rlog!("[reqster] güncelleme: görev başladı, {} sn sonra ilk denetim", FIRST_CHECK_DELAY.as_secs());
         tokio::time::sleep(FIRST_CHECK_DELAY).await;
         loop {
-            rlog!("[reqly] güncelleme: denetim başlıyor");
+            rlog!("[reqster] güncelleme: denetim başlıyor");
             run_check(&app, &server_url, token.as_deref(), &mut declined).await;
             tokio::time::sleep(RECHECK_INTERVAL).await;
         }
@@ -106,23 +106,23 @@ async fn run_check(app: &AppHandle, server_url: &str, token: Option<&str>, decli
     {
         Ok(client) => client,
         Err(err) => {
-            rlog!("[reqly] güncelleme: yerel HTTP istemcisi kurulamadı: {err}");
+            rlog!("[reqster] güncelleme: yerel HTTP istemcisi kurulamadı: {err}");
             return;
         }
     };
 
     let settings = match get_json(&local, &format!("{server_url}api/settings"), token).await {
         Ok(value) => {
-            rlog!("[reqly] güncelleme: ayarlar okundu");
+            rlog!("[reqster] güncelleme: ayarlar okundu");
             CheckSettings::from_json(&value)
         }
         Err(err) => {
-            rlog!("[reqly] güncelleme: ayarlar okunamadı ({err}), varsayılanla devam");
+            rlog!("[reqster] güncelleme: ayarlar okunamadı ({err}), varsayılanla devam");
             CheckSettings::default()
         }
     };
     if !settings.auto_check {
-        rlog!("[reqly] güncelleme: otomatik denetim kapalı, atlanıyor");
+        rlog!("[reqster] güncelleme: otomatik denetim kapalı, atlanıyor");
         return;
     }
 
@@ -133,39 +133,39 @@ async fn run_check(app: &AppHandle, server_url: &str, token: Option<&str>, decli
             .and_then(|raw| match Url::parse(raw) {
                 Ok(url) => Some(url),
                 Err(err) => {
-                    rlog!("[reqly] güncelleme: proxy adresi çözülemedi ({err}), proxy'siz devam");
+                    rlog!("[reqster] güncelleme: proxy adresi çözülemedi ({err}), proxy'siz devam");
                     None
                 }
             }),
         Err(err) => {
-            rlog!("[reqly] güncelleme: proxy bilgisi alınamadı ({err}), proxy'siz devam");
+            rlog!("[reqster] güncelleme: proxy bilgisi alınamadı ({err}), proxy'siz devam");
             None
         }
     };
 
-    rlog!("[reqly] güncelleme: manifest denetleniyor (proxy: {})", if proxy.is_some() { "var" } else { "yok" });
+    rlog!("[reqster] güncelleme: manifest denetleniyor (proxy: {})", if proxy.is_some() { "var" } else { "yok" });
     let update = match check(app, proxy, settings.verify_tls).await {
         Ok(Some(update)) => update,
         Ok(None) => {
-            rlog!("[reqly] güncelleme: yeni sürüm yok");
+            rlog!("[reqster] güncelleme: yeni sürüm yok");
             return;
         }
         Err(err) => {
-            rlog!("[reqly] güncelleme: denetim başarısız: {err}");
+            rlog!("[reqster] güncelleme: denetim başarısız: {err}");
             return;
         }
     };
 
     if !should_prompt(declined.as_deref(), &update.version) {
         rlog!(
-            "[reqly] güncelleme: {} bu oturumda ertelendi, tekrar sorulmuyor",
+            "[reqster] güncelleme: {} bu oturumda ertelendi, tekrar sorulmuyor",
             update.version
         );
         return;
     }
 
     rlog!(
-        "[reqly] güncelleme: {} → {} bulundu ({})",
+        "[reqster] güncelleme: {} → {} bulundu ({})",
         update.current_version, update.version, update.download_url
     );
     if ask_install(app, &update).await {
@@ -178,7 +178,7 @@ async fn run_check(app: &AppHandle, server_url: &str, token: Option<&str>, decli
 async fn get_json(client: &reqwest::Client, url: &str, token: Option<&str>) -> reqwest::Result<serde_json::Value> {
     let mut request = client.get(url);
     if let Some(token) = token {
-        request = request.header("X-Reqly-Token", token);
+        request = request.header("X-Reqster-Token", token);
     }
     request
         .send()
@@ -199,18 +199,18 @@ async fn check(
     let mut builder = app.updater_builder().timeout(UPDATER_TIMEOUT);
     if let Some(proxy) = proxy {
         rlog!(
-            "[reqly] güncelleme: proxy kullanılıyor: {}://{}",
+            "[reqster] güncelleme: proxy kullanılıyor: {}://{}",
             proxy.scheme(),
             proxy.host_str().unwrap_or("?")
         );
         builder = builder.proxy(proxy);
     }
     if !verify_tls {
-        rlog!("[reqly] güncelleme: network.verify_tls kapalı, sertifika doğrulaması yapılmıyor");
+        rlog!("[reqster] güncelleme: network.verify_tls kapalı, sertifika doğrulaması yapılmıyor");
         builder = builder.configure_client(|client| client.danger_accept_invalid_certs(true));
     }
     // Windows'ta kurulum `std::process::exit(0)` ile biter; o anda sidecar hâlâ yaşıyorsa
-    // `reqly-server.exe` kilitli kalır ve NSIS dosyayı değiştiremez. Varsayılan kanca
+    // `reqster-server.exe` kilitli kalır ve NSIS dosyayı değiştiremez. Varsayılan kanca
     // (`cleanup_before_exit`) sidecar'ı bilmez, bu yüzden ikisini birlikte çağırıyoruz.
     let exit_handle = app.clone();
     builder = builder.on_before_exit(move || {
@@ -234,7 +234,7 @@ async fn ask_install(app: &AppHandle, update: &Update) -> bool {
             &update.current_version,
             update.body.as_deref(),
         ))
-        .title("Reqly güncellemesi")
+        .title("Reqster güncellemesi")
         .kind(MessageDialogKind::Info)
         .buttons(MessageDialogButtons::OkCancelCustom(
             "Şimdi kur".into(),
@@ -248,7 +248,7 @@ async fn ask_install(app: &AppHandle, update: &Update) -> bool {
 }
 
 fn update_message(new_version: &str, current_version: &str, notes: Option<&str>) -> String {
-    let mut message = format!("Reqly {new_version} hazır (şu an {current_version}).");
+    let mut message = format!("Reqster {new_version} hazır (şu an {current_version}).");
     if let Some(notes) = notes.map(str::trim).filter(|n| !n.is_empty()) {
         message.push_str("\n\n");
         message.push_str(&truncate_chars(notes, NOTES_MAX_CHARS));
@@ -279,7 +279,7 @@ async fn install(app: &AppHandle, update: Update) {
         }
     };
 
-    set_title("Reqly — güncelleme indiriliyor");
+    set_title("Reqster — güncelleme indiriliyor");
     let downloaded = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let last_percent = Arc::new(std::sync::atomic::AtomicU64::new(u64::MAX));
     let progress_window = window.clone();
@@ -292,24 +292,24 @@ async fn install(app: &AppHandle, update: Update) {
                     if last_percent.swap(percent, Ordering::Relaxed) != percent {
                         if let Some(window) = &progress_window {
                             let _ = window
-                                .set_title(&format!("Reqly — güncelleme indiriliyor %{percent}"));
+                                .set_title(&format!("Reqster — güncelleme indiriliyor %{percent}"));
                         }
                     }
                 }
             },
-            || rlog!("[reqly] güncelleme: indirme tamamlandı, imza doğrulandı, kuruluyor"),
+            || rlog!("[reqster] güncelleme: indirme tamamlandı, imza doğrulandı, kuruluyor"),
         )
         .await;
 
     match result {
         Ok(()) => {
-            rlog!("[reqly] güncelleme: kuruldu, yeniden başlatılıyor");
+            rlog!("[reqster] güncelleme: kuruldu, yeniden başlatılıyor");
             set_title(WINDOW_TITLE);
             // Ana iş parçacığında değiliz: request_exit → RunEvent::Exit → kill_sidecar → yeniden aç.
             app.restart();
         }
         Err(err) => {
-            rlog!("[reqly] güncelleme: kurulum başarısız: {err}");
+            rlog!("[reqster] güncelleme: kurulum başarısız: {err}");
             set_title(WINDOW_TITLE);
             // Windows'ta on_before_exit koştuktan sonra (kurucu açılamadıysa) sidecar ölmüştür;
             // o durumda uygulama çalışmaya devam edemez, kullanıcıya söyle.
@@ -317,13 +317,13 @@ async fn install(app: &AppHandle, update: Update) {
                 .try_state::<Sidecar>()
                 .is_some_and(|s| s.closing.load(Ordering::SeqCst));
             let tail = if sidecar_gone {
-                "Yerel sunucu kapatıldı; lütfen Reqly'yi kapatıp yeniden açın."
+                "Yerel sunucu kapatıldı; lütfen Reqster'yi kapatıp yeniden açın."
             } else {
                 "Uygulama çalışmaya devam ediyor."
             };
             app.dialog()
                 .message(format!("Güncelleme kurulamadı: {err}\n\n{tail}"))
-                .title("Reqly güncellemesi")
+                .title("Reqster güncellemesi")
                 .kind(MessageDialogKind::Error)
                 .show(|_| {});
         }
@@ -334,7 +334,7 @@ async fn install(app: &AppHandle, update: Update) {
 mod tests {
     #[test]
     fn ready_url_split_into_base_and_token() {
-        let (base, token) = super::split_ready_url("http://127.0.0.1:4100/?reqly_token=abc123").unwrap();
+        let (base, token) = super::split_ready_url("http://127.0.0.1:4100/?reqster_token=abc123").unwrap();
         assert_eq!(base, "http://127.0.0.1:4100/");
         assert_eq!(token.as_deref(), Some("abc123"));
         let (base, token) = super::split_ready_url("http://127.0.0.1:4100/").unwrap();
@@ -371,13 +371,13 @@ mod tests {
     fn mesaj_notlari_karakter_sinirinda_kirpar() {
         let notes = "ğ".repeat(NOTES_MAX_CHARS + 50);
         let message = update_message("1.0.1", "1.0.0", Some(&notes));
-        assert!(message.starts_with("Reqly 1.0.1 hazır (şu an 1.0.0)."));
+        assert!(message.starts_with("Reqster 1.0.1 hazır (şu an 1.0.0)."));
         let shown = message.split("\n\n").nth(1).unwrap();
         assert_eq!(shown.chars().count(), NOTES_MAX_CHARS + 1); // + "…"
         assert!(shown.ends_with('…'));
         assert_eq!(
             update_message("1.0.1", "1.0.0", Some("  ")),
-            "Reqly 1.0.1 hazır (şu an 1.0.0)."
+            "Reqster 1.0.1 hazır (şu an 1.0.0)."
         );
     }
 

@@ -1,4 +1,4 @@
-import type { AuthConfig, CollectionModel } from '@reqly/shared';
+import type { AuthConfig, CollectionModel } from '@reqster/shared';
 import { getDb } from '../connection.js';
 import { newId } from '../ids.js';
 

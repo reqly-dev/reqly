@@ -1,4 +1,4 @@
-import type { UiLanguage } from '@reqly/shared';
+import type { UiLanguage } from '@reqster/shared';
 import { useCallback, useSyncExternalStore } from 'react';
 import { en } from '../locales/en';
 import { tr, type MessageKey } from '../locales/tr';
@@ -7,7 +7,7 @@ import { loadUiPrefs, saveUiPrefs } from './uiPrefs';
 /**
  * Bağımlılıksız i18n. Sözlükler `locales/tr.ts` (kaynak) ve `locales/en.ts` (aynı anahtar kümesi,
  * tip zorlamalı). Dil tercihinin kalıcı kaynağı sunucudaki `ui.language` ayarıdır
- * (`auto | tr | en`, `lib/uiPrefs.ts`); `localStorage['reqly.language']` yalnızca ilk boyama
+ * (`auto | tr | en`, `lib/uiPrefs.ts`); `localStorage['reqster.language']` yalnızca ilk boyama
  * önbelleğidir (tema ile aynı kalıp). Paketlenmiş modda sunucu `index.html`'e `data-lang` basar
  * (`auto` değilse); `index.html`'deki satır içi script `<html lang>`'i ona göre ayarlar.
  * `auto` → `navigator.language` `tr*` ise Türkçe, değilse İngilizce.
@@ -17,7 +17,7 @@ export type LanguageSetting = UiLanguage;
 export type { MessageKey };
 export type TParams = Record<string, string | number>;
 
-const STORAGE_KEY = 'reqly.language';
+const STORAGE_KEY = 'reqster.language';
 const dictionaries: Record<Language, Record<MessageKey, string>> = { tr, en };
 
 interface LanguageState {

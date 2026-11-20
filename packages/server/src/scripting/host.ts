@@ -25,8 +25,8 @@ export interface ScriptHostHandlers {
   onSendRequest(request: ScriptHttpRequest, opts: { timeoutMs: number; signal: AbortSignal }): Promise<ScriptHttpResponse>;
 }
 
-/** Başlatıcıya "sunucu değil, script worker'ı ol" diyen ortam değişkeni (bkz. launcher/reqly-launcher.js) */
-export const WORKER_MODE_ENV = 'REQLY_WORKER_MODE';
+/** Başlatıcıya "sunucu değil, script worker'ı ol" diyen ortam değişkeni (bkz. launcher/reqster-launcher.js) */
+export const WORKER_MODE_ENV = 'REQSTER_WORKER_MODE';
 /** Host-side güvenlik ağı: worker kendi timeout'unu aşıp da hiç yanıt vermezse (asılı kalırsa) devreye girer */
 const HOST_TIMEOUT_GRACE_MS = 3_000;
 
@@ -38,7 +38,7 @@ let queue: Promise<unknown> = Promise.resolve();
 function spawnWorkerProcess(): ChildProcess {
   const stdio: Array<'ignore' | 'inherit' | 'ipc'> = ['ignore', 'inherit', 'inherit', 'ipc'];
   if (isPackaged) {
-    // Paketlenmiş modda process.execPath Reqly.exe'dir (Node SEA): verilen bir script yolunu
+    // Paketlenmiş modda process.execPath Reqster.exe'dir (Node SEA): verilen bir script yolunu
     // değil, her zaman gömülü başlatıcıyı çalıştırır. Başlatıcı bu ortam değişkenini görünce
     // sunucu yerine resources/worker.cjs'yi yükler. 'ipc' kanalı spawn ile de kurulur.
     return spawn(process.execPath, [], {

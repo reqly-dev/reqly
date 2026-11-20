@@ -1,4 +1,4 @@
-# Contributing to Reqly
+# Contributing to Reqster
 
 Thanks for your interest! Bug reports, ideas and pull requests are welcome. Issues and pull requests may be
 written in English or Turkish.
@@ -6,7 +6,7 @@ written in English or Turkish.
 ## Before you start
 
 - For anything larger than a small fix, please open an issue first so we can agree on the approach.
-- Reqly's principles are in [TASARIM.md](TASARIM.md) (Turkish): local-first, no telemetry, no account, lightweight.
+- Reqster's principles are in [TASARIM.md](TASARIM.md) (Turkish): local-first, no telemetry, no account, lightweight.
   Changes that add outgoing network calls, accounts or heavy dependencies are unlikely to be accepted.
 - Security issues must **not** be reported publicly — see [SECURITY.md](SECURITY.md).
 
@@ -36,7 +36,7 @@ The desktop shell (`src-tauri/`) additionally needs Rust stable; see the README 
 
 ## Developer Certificate of Origin (DCO)
 
-Reqly uses the [Developer Certificate of Origin 1.1](https://developercertificate.org/) instead of a CLA. By adding a
+Reqster uses the [Developer Certificate of Origin 1.1](https://developercertificate.org/) instead of a CLA. By adding a
 `Signed-off-by` line to a commit you certify that you wrote the change or otherwise have the right to submit it under
 the project's license (Apache-2.0).
 

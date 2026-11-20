@@ -1,4 +1,4 @@
-import type { CollectionModel, EnvironmentModel, FolderModel, RequestModel } from '@reqly/shared';
+import type { CollectionModel, EnvironmentModel, FolderModel, RequestModel } from '@reqster/shared';
 import { getDb } from '../db/connection.js';
 import { createCollection, getCollection, listCollections } from '../db/repositories/collections.js';
 import { createEnvironment, getEnvironment, listEnvironments } from '../db/repositories/environments.js';

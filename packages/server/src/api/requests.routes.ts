@@ -1,4 +1,4 @@
-import { requestUpsertSchema } from '@reqly/shared';
+import { requestUpsertSchema } from '@reqster/shared';
 import type { FastifyInstance } from 'fastify';
 import { getCollection } from '../db/repositories/collections.js';
 import {

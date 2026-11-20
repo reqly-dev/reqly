@@ -1,4 +1,4 @@
-import type { BodyMode, RequestBody } from '@reqly/shared';
+import type { BodyMode, RequestBody } from '@reqster/shared';
 import { CodeEditor } from '../../components/LazyCodeEditor';
 import { KeyValueEditor } from '../../components/KeyValueEditor';
 import { formatByLanguage, languageFromContentType } from '../../lib/formatters';

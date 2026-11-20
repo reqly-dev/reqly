@@ -1,4 +1,4 @@
-import type { VariableModel, VariableScope } from '@reqly/shared';
+import type { VariableModel, VariableScope } from '@reqster/shared';
 import { Lock, Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';

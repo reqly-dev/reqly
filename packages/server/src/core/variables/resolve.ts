@@ -1,4 +1,4 @@
-import type { ResolvedVariable, VariableScope } from '@reqly/shared';
+import type { ResolvedVariable, VariableScope } from '@reqster/shared';
 import { getActiveEnvironment } from '../../db/repositories/environments.js';
 import { listVariables, variableMap } from '../../db/repositories/variables.js';
 

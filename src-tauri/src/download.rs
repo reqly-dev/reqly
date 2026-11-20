@@ -3,8 +3,8 @@
 //! Frontend dosyayı tarayıcı indirmesi olarak verir (`<a download>` + blob URL); IPC kullanılmaz.
 //! `on_download` olayı senkron ve UI iş parçacığında çağrılır: içinde modal diyalog açmak WebView2'de
 //! yeniden girişim riski taşıdığından indirme önce geçici bir dosyaya alınır, bitince asenkron kaydet
-//! diyaloğu açılır ve dosya seçilen yere taşınır. Sonuç sayfaya `reqly:file-saved` /
-//! `reqly:file-save-failed` DOM olayıyla bildirilir (frontend bildirim gösterir); iptal sessizdir.
+//! diyaloğu açılır ve dosya seçilen yere taşınır. Sonuç sayfaya `reqster:file-saved` /
+//! `reqster:file-save-failed` DOM olayıyla bildirilir (frontend bildirim gösterir); iptal sessizdir.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -25,15 +25,15 @@ pub(crate) fn handle<R: Runtime>(webview: Webview<R>, event: DownloadEvent<'_>) 
             let name = destination
                 .file_name()
                 .map(|n| n.to_string_lossy().into_owned())
-                .unwrap_or_else(|| "reqly-export.json".into());
+                .unwrap_or_else(|| "reqster-export.json".into());
             let dir = std::env::temp_dir().join(format!(
-                "reqly-download-{}-{}",
+                "reqster-download-{}-{}",
                 std::process::id(),
                 COUNTER.fetch_add(1, Ordering::Relaxed)
             ));
             if let Err(err) = std::fs::create_dir_all(&dir) {
                 // Geçici dizin yoksa varsayılan davranış (İndirilenler) sürsün; kaydet diyaloğu açılmaz
-                crate::rlog!("[reqly] indirme: geçici dizin açılamadı ({err}), varsayılan konuma iniyor");
+                crate::rlog!("[reqster] indirme: geçici dizin açılamadı ({err}), varsayılan konuma iniyor");
                 return true;
             }
             let temp = dir.join(&name);
@@ -46,9 +46,9 @@ pub(crate) fn handle<R: Runtime>(webview: Webview<R>, event: DownloadEvent<'_>) 
                 return true;
             };
             if !success {
-                crate::rlog!("[reqly] indirme başarısız: {name}");
+                crate::rlog!("[reqster] indirme başarısız: {name}");
                 cleanup(&temp);
-                notify(&webview, "reqly:file-save-failed", &name);
+                notify(&webview, "reqster:file-save-failed", &name);
                 return true;
             }
             ask_and_move(webview, temp, name);
@@ -81,10 +81,10 @@ fn ask_and_move<R: Runtime>(webview: Webview<R>, temp: PathBuf, name: String) {
             return;
         };
         match move_file(&temp, &chosen) {
-            Ok(()) => notify(&webview, "reqly:file-saved", &chosen.to_string_lossy()),
+            Ok(()) => notify(&webview, "reqster:file-saved", &chosen.to_string_lossy()),
             Err(err) => {
-                crate::rlog!("[reqly] dosya kaydedilemedi ({}): {err}", chosen.display());
-                notify(&webview, "reqly:file-save-failed", &chosen.to_string_lossy());
+                crate::rlog!("[reqster] dosya kaydedilemedi ({}): {err}", chosen.display());
+                notify(&webview, "reqster:file-save-failed", &chosen.to_string_lossy());
             }
         }
         cleanup(&temp);
@@ -121,6 +121,6 @@ fn notify<R: Runtime>(webview: &Webview<R>, event: &str, path: &str) {
     let detail = serde_json::json!({ "path": path }).to_string();
     let script = format!("window.dispatchEvent(new CustomEvent({}, {{ detail: {detail} }}))", serde_json::json!(event));
     if let Err(err) = webview.eval(script) {
-        crate::rlog!("[reqly] bildirim gönderilemedi: {err}");
+        crate::rlog!("[reqster] bildirim gönderilemedi: {err}");
     }
 }

@@ -1,4 +1,4 @@
-import type { ExecuteTimings, HistoryDetail, HistorySummary } from '@reqly/shared';
+import type { ExecuteTimings, HistoryDetail, HistorySummary } from '@reqster/shared';
 import { getDb } from '../connection.js';
 import { newId } from '../ids.js';
 

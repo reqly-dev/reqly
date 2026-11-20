@@ -1,4 +1,4 @@
-import { proxyActivateSchema, proxyPatchSchema, proxyUpsertSchema } from '@reqly/shared';
+import { proxyActivateSchema, proxyPatchSchema, proxyUpsertSchema } from '@reqster/shared';
 import type { FastifyInstance } from 'fastify';
 import {
   createProxy,

@@ -160,7 +160,7 @@ export const postmanApiImportSchema = z
     apiKey: postmanApiKeySchema,
     collectionUids: z.array(z.string().min(1)).default([]),
     environmentUids: z.array(z.string().min(1)).default([]),
-    /** Bu workspace'lerin global değişkenleri Reqly global'lerine aktarılır */
+    /** Bu workspace'lerin global değişkenleri Reqster global'lerine aktarılır */
     globalsWorkspaceIds: z.array(z.string().min(1)).default([]),
   })
   .strict();

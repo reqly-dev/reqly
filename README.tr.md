@@ -1,7 +1,10 @@
-# Reqly
+# Reqster
 
 Tamamen yerel çalışan, hafif ve veri gizliliği odaklı bir API istemcisi (Postman alternatifi).
 Hesap yok, bulut yok, telemetri yok: koleksiyonlarınız, ortamlarınız ve geçmişiniz makinenizde kalır.
+
+*Reqster = request + tester.* Eski adı **Reqly**: mevcut kurulumlar yerinde güncellenir, `.reqly.json` paketleri içe
+alınmaya ve `REQLY_*` ortam değişkenleri çalışmaya devam eder.
 
 [English](README.md) · [İndir](https://reqly.talhacigdem.tr/download/latest/) · [Tasarım notları](TASARIM.md)
 
@@ -14,7 +17,7 @@ Hesap yok, bulut yok, telemetri yok: koleksiyonlarınız, ortamlarınız ve geç
 - İzole sandbox'ta (ayrı süreçte `isolated-vm`, zaman ve bellek sınırlı, ağ/dosya erişimsiz) pre-request ve
   post-response script'leri; `pm.*` uyumluluk katmanı ve `pm.sendRequest`
 - Postman koleksiyon / ortam içe aktarma (dosyadan ya da doğrudan Postman API'sinden), Postman v2.1 dışa aktarma,
-  `.reqly.json` paylaşım paketi, cURL içe/dışa aktarma (bash ve Windows cmd)
+  `.reqster.json` paylaşım paketi, cURL içe/dışa aktarma (bash ve Windows cmd)
 - Güne göre gruplanmış geçmiş, süre dökümü (DNS / TCP / TLS / TTFB / indirme)
 - Atlama listeli proxy profilleri, TLS doğrulama anahtarı, bağlantı yeniden kullanımı
 - Türkçe ve İngilizce arayüz, koyu ve açık tema
@@ -24,18 +27,18 @@ Hesap yok, bulut yok, telemetri yok: koleksiyonlarınız, ortamlarınız ve geç
 ## Kurulum
 
 Son sürümü [indirme sayfasından](https://reqly.talhacigdem.tr/download/latest/) ya da
-[GitHub Releases](https://github.com/reqly-dev/reqly/releases)'tan indirin.
+[GitHub Releases](https://github.com/reqster-dev/reqster/releases)'tan indirin.
 
 | Platform | Dosya | Not |
 |---|---|---|
-| Windows | `Reqly_<sürüm>_x64-setup.exe` | Kullanıcı hesabına kurulur, yönetici hakkı gerekmez; Edge WebView2 yoksa indirir |
-| Windows (taşınabilir) | `Reqly_<sürüm>_x64-portable.zip` | Kurulum yok: açıp `Reqly\reqly.exe`'yi çalıştırın (Windows 10/11'deki gibi WebView2 kurulu olmalı) |
-| macOS | `Reqly_<sürüm>_aarch64.dmg` / `Reqly_<sürüm>_x64.dmg` | Apple Silicon / Intel. Paketler henüz notarize değil: ilk açılışta Sistem Ayarları → Gizlilik ve Güvenlik → "Yine de Aç" |
-| Linux | `Reqly-<sürüm>-linux-x64.tar.gz` | Sunucuyu çalıştırır; tarayıcıda `http://127.0.0.1:7357` |
+| Windows | `Reqster_<sürüm>_x64-setup.exe` | Kullanıcı hesabına kurulur, yönetici hakkı gerekmez; Edge WebView2 yoksa indirir |
+| Windows (taşınabilir) | `Reqster_<sürüm>_x64-portable.zip` | Kurulum yok: açıp `Reqster\reqster.exe`'yi çalıştırın (Windows 10/11'deki gibi WebView2 kurulu olmalı) |
+| macOS | `Reqster_<sürüm>_aarch64.dmg` / `Reqster_<sürüm>_x64.dmg` | Apple Silicon / Intel. Paketler henüz notarize değil: ilk açılışta Sistem Ayarları → Gizlilik ve Güvenlik → "Yine de Aç" |
+| Linux | `Reqster-<sürüm>-linux-x64.tar.gz` | Sunucuyu çalıştırır; tarayıcıda `http://127.0.0.1:7357` |
 
-Veri tek bir SQLite dosyasındadır: Windows'ta `%APPDATA%\tr.talhacigdem.reqly\reqly.db`, macOS'ta
-`~/Library/Application Support/tr.talhacigdem.reqly/reqly.db`, diğer durumlarda `data/reqly.db` (ya da
-`REQLY_DATA_DIR`). Masaüstü uygulaması günde bir kez güncelleme denetler; tek dış çağrısı budur ve Ayarlar →
+Veri tek bir SQLite dosyasındadır: Windows'ta `%APPDATA%\tr.talhacigdem.reqly\reqster.db`, macOS'ta
+`~/Library/Application Support/tr.talhacigdem.reqly/reqster.db`, diğer durumlarda `data/reqster.db` (ya da
+`REQSTER_DATA_DIR`). Masaüstü uygulaması günde bir kez güncelleme denetler; tek dış çağrısı budur ve Ayarlar →
 Güncellemeler'den kapatılabilir.
 
 ## Geliştirme
@@ -66,8 +69,8 @@ paketlerini GitHub Actions üretir ([`.github/workflows`](.github/workflows)).
 
 ## Sunucuda çalıştırma
 
-Linux paketi headless çalışabilir (bkz. [`deploy/Dockerfile`](deploy/Dockerfile)): `REQLY_HOST=0.0.0.0` verin ve dış
-adı `REQLY_ALLOWED_HOSTS`'a ekleyin. **Önüne kimlik doğrulayan bir ters vekil koyun.** Reqly kendi girişi olmayan bir
+Linux paketi headless çalışabilir (bkz. [`deploy/Dockerfile`](deploy/Dockerfile)): `REQSTER_HOST=0.0.0.0` verin ve dış
+adı `REQSTER_ALLOWED_HOSTS`'a ekleyin. **Önüne kimlik doğrulayan bir ters vekil koyun.** Reqster kendi girişi olmayan bir
 HTTP istemcisi ve script çalıştırıcısıdır; ona erişebilen herkes onu ağınıza açılan bir proxy gibi kullanabilir.
 
 ## Katkı

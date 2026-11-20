@@ -1,4 +1,4 @@
-import { settingsPatchSchema, type AppVersionInfo, type SettingKey } from '@reqly/shared';
+import { settingsPatchSchema, type AppVersionInfo, type SettingKey } from '@reqster/shared';
 import type { FastifyInstance } from 'fastify';
 import { getAllSettings, setSetting } from '../db/repositories/settings.js';
 import { appVersion } from '../paths.js';

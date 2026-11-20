@@ -1,4 +1,4 @@
-import type { AppVersionInfo, Settings, SettingsPatch, UiLanguage } from '@reqly/shared';
+import type { AppVersionInfo, Settings, SettingsPatch, UiLanguage } from '@reqster/shared';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';

@@ -1,4 +1,4 @@
-import type { CollectionTree, FolderModel, RequestModel } from '@reqly/shared';
+import type { CollectionTree, FolderModel, RequestModel } from '@reqster/shared';
 import { ChevronDown, ChevronRight, Copy, Download, FolderPlus, Plus, Settings, X } from 'lucide-react';
 import { useState } from 'react';
 import { useT } from '../../lib/i18n';

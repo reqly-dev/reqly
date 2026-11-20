@@ -29,17 +29,17 @@ pub(crate) fn init(dir: PathBuf, app_version: &str) {
         Ok(f) => {
             let _ = FILE.set(Mutex::new(Some(f)));
             write(&format!(
-                "[reqly] ---- başlangıç: Reqly {app_version}, {} {} ----",
+                "[reqster] ---- başlangıç: Reqster {app_version}, {} {} ----",
                 std::env::consts::OS,
                 std::env::consts::ARCH
             ));
-            write(&format!("[reqly] log dosyası: {}", path.display()));
+            write(&format!("[reqster] log dosyası: {}", path.display()));
         }
-        Err(err) => eprintln!("[reqly] log dosyası açılamadı ({}): {err}", path.display()),
+        Err(err) => eprintln!("[reqster] log dosyası açılamadı ({}): {err}", path.display()),
     }
     // Panik → dosyaya yaz; abort profilinde bu satır çökmenin tek izi olabilir.
     std::panic::set_hook(Box::new(|info| {
-        write(&format!("[reqly] PANİK: {info}"));
+        write(&format!("[reqster] PANİK: {info}"));
     }));
 }
 

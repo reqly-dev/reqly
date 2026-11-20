@@ -1,4 +1,4 @@
-import type { ImportReport } from '@reqly/shared';
+import type { ImportReport } from '@reqster/shared';
 import { t, tn } from './i18n';
 
 /** "İçe aktarıldı: 2 koleksiyon, 5 istek — 1 öğe atlandı — 1 uyarı" biçiminde tek satır özet (aktif dilde) */

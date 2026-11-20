@@ -1,4 +1,4 @@
-import type { WorkspaceModel } from '@reqly/shared';
+import type { WorkspaceModel } from '@reqster/shared';
 import { getDb } from '../connection.js';
 import { newId } from '../ids.js';
 

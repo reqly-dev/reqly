@@ -1,4 +1,4 @@
-import type { Settings, SettingsPatch } from '@reqly/shared';
+import type { Settings, SettingsPatch } from '@reqster/shared';
 import { api } from '../api/client';
 
 /**
@@ -28,8 +28,8 @@ export function saveUiPrefs(patch: SettingsPatch): void {
 
 /** SplitPane `storageKey` → ayar anahtarı; eşlemesi olmayan bölmeler yalnızca localStorage kullanır */
 const LAYOUT_SETTING_KEYS = {
-  'reqly.layout.sidebarWidth': 'ui.sidebar_width',
-  'reqly.layout.requestPaneRatio': 'ui.request_pane_ratio',
+  'reqster.layout.sidebarWidth': 'ui.sidebar_width',
+  'reqster.layout.requestPaneRatio': 'ui.request_pane_ratio',
 } as const satisfies Record<string, keyof SettingsPatch>;
 
 type LayoutStorageKey = keyof typeof LAYOUT_SETTING_KEYS;

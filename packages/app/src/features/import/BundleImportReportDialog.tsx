@@ -1,11 +1,11 @@
-import type { ImportReport } from '@reqly/shared';
+import type { ImportReport } from '@reqster/shared';
 import { T } from '../../components/T';
 import { useT } from '../../lib/i18n';
 import { summarizeImportReport } from '../../lib/importReport';
 import { dialog } from '../../stores/dialogStore';
 
 /**
- * Reqly paketi içe aktarıldıktan sonra uyarıları (özellikle boş gelen secret değişkenler) bildirim
+ * Reqster paketi içe aktarıldıktan sonra uyarıları (özellikle boş gelen secret değişkenler) bildirim
  * yerine diyalogda gösterir: 5 saniyelik bildirimde kullanıcı hangi değerleri doldurması gerektiğini göremez.
  */
 export function showBundleImportReport(report: ImportReport): void {

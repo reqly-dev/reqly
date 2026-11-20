@@ -63,7 +63,7 @@ msg=$(mktemp); trap 'rm -f "$msg"' EXIT
 { printf 'Sürüm %s\n' "$new"; [[ -n "${SURUM_COMMIT_TRAILERS:-}" ]] && printf '\n%s\n' "$SURUM_COMMIT_TRAILERS"; } > "$msg"
 git add package.json package-lock.json packages/*/package.json
 git commit -q -s -F "$msg"   # DCO: Signed-off-by (CONTRIBUTING.md)
-git tag -a "v$new" -m "Reqly $new"
+git tag -a "v$new" -m "Reqster $new"
 echo "commit: $(git rev-parse --short HEAD)  etiket: v$new"
 
 if (( push )); then
@@ -74,7 +74,7 @@ if (( push )); then
   else
     git push origin main "v$new"
   fi
-  echo "CI: https://github.com/reqly-dev/reqly/actions   Release: https://github.com/reqly-dev/reqly/releases/tag/v$new"
+  echo "CI: https://github.com/reqster-dev/reqster/actions   Release: https://github.com/reqster-dev/reqster/releases/tag/v$new"
 else
   echo "push atlandı (--no-push); elle: git push origin main v$new"
 fi

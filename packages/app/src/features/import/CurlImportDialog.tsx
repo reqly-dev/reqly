@@ -1,4 +1,4 @@
-import type { CurlImportResult } from '@reqly/shared';
+import type { CurlImportResult } from '@reqster/shared';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { T } from '../../components/T';

@@ -1,4 +1,4 @@
-import { nameSchema, variableUpsertSchema } from '@reqly/shared';
+import { nameSchema, variableUpsertSchema } from '@reqster/shared';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {

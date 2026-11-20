@@ -8,7 +8,7 @@ import { showShareDialog } from '../export/ShareDialog';
 import { showCurlImport } from './CurlImportDialog';
 import { showPostmanApiImport } from './PostmanApiImportDialog';
 
-/** Üst bardaki "İçe / dışa aktar" menüsü: Postman/Reqly dosyası seç, Postman API'den çek, cURL yapıştır, paket paylaş */
+/** Üst bardaki "İçe / dışa aktar" menüsü: Postman/Reqster dosyası seç, Postman API'den çek, cURL yapıştır, paket paylaş */
 export function ImportMenu() {
   const t = useT();
   const importPostmanFile = useAppStore((s) => s.importPostmanFile);

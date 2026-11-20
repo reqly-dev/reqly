@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 /**
- * Reqly'yi tek klasörlük, bağımsız bir dağıtım olarak paketler.
+ * Reqster'yi tek klasörlük, bağımsız bir dağıtım olarak paketler.
  *
- *   node launcher/package.mjs --target win-x64            → dist/Reqly-<sürüm>-win-x64.zip
- *   node launcher/package.mjs --target linux-x64          → dist/Reqly-<sürüm>-linux-x64.tar.gz
- *   node launcher/package.mjs --target darwin-arm64       → dist/Reqly-<sürüm>-darwin-arm64.tar.gz (yalnızca macOS'ta)
- *   node launcher/package.mjs --target darwin-x64         → dist/Reqly-<sürüm>-darwin-x64.tar.gz   (yalnızca macOS'ta)
- *     --version 1.2.3        (yoksa REQLY_VERSION, o da yoksa 0.0.0-dev)
+ *   node launcher/package.mjs --target win-x64            → dist/Reqster-<sürüm>-win-x64.zip
+ *   node launcher/package.mjs --target linux-x64          → dist/Reqster-<sürüm>-linux-x64.tar.gz
+ *   node launcher/package.mjs --target darwin-arm64       → dist/Reqster-<sürüm>-darwin-arm64.tar.gz (yalnızca macOS'ta)
+ *   node launcher/package.mjs --target darwin-x64         → dist/Reqster-<sürüm>-darwin-x64.tar.gz   (yalnızca macOS'ta)
+ *     --version 1.2.3        (yoksa REQSTER_VERSION, o da yoksa 0.0.0-dev)
  *     --skip-app-build       (packages/app/dist zaten güncelse)
  *     --no-archive           zip/tar.gz üretme (yalnızca çalıştırılabilir klasör)
  *     --plan                 hiçbir şey üretme; indirilecek URL'leri, triple'ı, ön-derleme durumunu ve adımları yazdır
- *     --sidecar-dir <dizin>  Tauri sidecar çıktısı: exe → <dizin>/binaries/reqly-server-<rust-triple>[.exe],
+ *     --sidecar-dir <dizin>  Tauri sidecar çıktısı: exe → <dizin>/binaries/reqster-server-<rust-triple>[.exe],
  *                            staged resources/ → <dizin>/resources/ (mevcut dizin silinip değiştirilir).
- *                            Tauri `bundle.externalBin: ["binaries/reqly-server"]` bu adlandırmayı bekler (ad, Cargo crate adı `reqly`den farklı olmak zorunda).
+ *                            Tauri `bundle.externalBin: ["binaries/reqster-server"]` bu adlandırmayı bekler (ad, Cargo crate adı `reqster`den farklı olmak zorunda).
  *
  *   Tauri sidecar örneği:
  *   node launcher/package.mjs --target linux-x64 --sidecar-dir src-tauri --no-archive
  *
  * Çıktı klasörü:
- *   Reqly/
- *     Reqly.exe | reqly        resmî Node ikilisi + SEA blob olarak gömülü launcher/reqly-launcher.js
+ *   Reqster/
+ *     Reqster.exe | reqster        resmî Node ikilisi + SEA blob olarak gömülü launcher/reqster-launcher.js
  *     resources/
  *       server.cjs             packages/server esbuild bundle'ı (native modüller hariç)
  *       worker.cjs             script sandbox child process bundle'ı
@@ -71,7 +71,7 @@ const TARGETS = {
     nodeArch: 'x64',
     nodeDist: (v) => `node-v${v}-win-x64.zip`,
     nodeBinaryInArchive: (v) => `node-v${v}-win-x64/node.exe`,
-    exeName: 'Reqly.exe',
+    exeName: 'Reqster.exe',
     archive: 'zip',
     prebuildDir: 'win32-x64',
     // Tauri externalBin adlandırması: <ad>-<rust target triple>[.exe]
@@ -83,7 +83,7 @@ const TARGETS = {
     nodeArch: 'x64',
     nodeDist: (v) => `node-v${v}-linux-x64.tar.xz`,
     nodeBinaryInArchive: (v) => `node-v${v}-linux-x64/bin/node`,
-    exeName: 'reqly',
+    exeName: 'reqster',
     archive: 'tar.gz',
     prebuildDir: 'linux-x64',
     rustTriple: 'x86_64-unknown-linux-gnu',
@@ -94,7 +94,7 @@ const TARGETS = {
     nodeArch: 'arm64',
     nodeDist: (v) => `node-v${v}-darwin-arm64.tar.gz`,
     nodeBinaryInArchive: (v) => `node-v${v}-darwin-arm64/bin/node`,
-    exeName: 'reqly',
+    exeName: 'reqster',
     archive: 'tar.gz',
     prebuildDir: 'darwin-arm64',
     rustTriple: 'aarch64-apple-darwin',
@@ -105,7 +105,7 @@ const TARGETS = {
     nodeArch: 'x64',
     nodeDist: (v) => `node-v${v}-darwin-x64.tar.gz`,
     nodeBinaryInArchive: (v) => `node-v${v}-darwin-x64/bin/node`,
-    exeName: 'reqly',
+    exeName: 'reqster',
     archive: 'tar.gz',
     prebuildDir: 'darwin-x64',
     rustTriple: 'x86_64-apple-darwin',
@@ -131,7 +131,7 @@ function fail(msg) {
 function parseArgs(argv) {
   const args = {
     target: null,
-    version: process.env.REQLY_VERSION || '0.0.0-dev',
+    version: process.env.REQSTER_VERSION || '0.0.0-dev',
     skipAppBuild: false,
     archive: true,
     sidecarDir: null,
@@ -271,7 +271,7 @@ function buildApp(skip) {
     log('frontend build atlandı (--skip-app-build)');
   } else {
     log('frontend build (vite)');
-    run('npm', ['run', 'build', '-w', '@reqly/app'], { cwd: repoRoot });
+    run('npm', ['run', 'build', '-w', '@reqster/app'], { cwd: repoRoot });
   }
   return appDist;
 }
@@ -287,9 +287,9 @@ async function bundleServer(resourcesDir, nodeVersion) {
     legalComments: 'none',
     logLevel: 'warning',
     // Kaynak ESM'dir; CJS bundle'da import.meta.url bundle dosyasının kendi URL'ine çevrilir
-    // (paketlenmiş modda yollar zaten REQLY_RESOURCES_DIR'dan çözülür, bu yalnızca güvenlik ağıdır).
-    define: { 'import.meta.url': '__reqlyImportMetaUrl' },
-    banner: { js: "const __reqlyImportMetaUrl = require('node:url').pathToFileURL(__filename).href;" },
+    // (paketlenmiş modda yollar zaten REQSTER_RESOURCES_DIR'dan çözülür, bu yalnızca güvenlik ağıdır).
+    define: { 'import.meta.url': '__reqsterImportMetaUrl' },
+    banner: { js: "const __reqsterImportMetaUrl = require('node:url').pathToFileURL(__filename).href;" },
   };
   log('server bundle (esbuild)');
   await build({
@@ -354,7 +354,7 @@ function installNativeModules(resourcesDir, target) {
   }
   writeFileSync(
     path.join(resourcesDir, 'package.json'),
-    JSON.stringify({ name: 'reqly-runtime', private: true, dependencies }, null, 2) + '\n',
+    JSON.stringify({ name: 'reqster-runtime', private: true, dependencies }, null, 2) + '\n',
   );
   log(`native modüller kuruluyor (${target.nodePlatform}-${target.nodeArch}): ${JSON.stringify(dependencies)}`);
   // --ignore-scripts: install script'leri HOST için derleme yapabilir (node-gyp-build, hedef
@@ -429,7 +429,7 @@ function makeSeaBlob(outDir) {
     cfgPath,
     JSON.stringify(
       {
-        main: path.join(launcherDir, 'reqly-launcher.js'),
+        main: path.join(launcherDir, 'reqster-launcher.js'),
         output: blobPath,
         disableExperimentalSEAWarning: true,
         // Kod önbelleği/snapshot platforma bağlıdır; çapraz paketleme için kapalı kalmalı
@@ -485,14 +485,14 @@ function printPlan(targetName, target, nodeVersion, args) {
     `  Node ikilisi : ${base}/${target.nodeDist(nodeVersion)}  (arşiv içi: ${target.nodeBinaryInArchive(nodeVersion)})`,
     `  SHA-256      : ${base}/SHASUMS256.txt`,
     `  rust triple  : ${target.rustTriple}`,
-    `  sidecar      : ${args.sidecarDir ? path.join(path.resolve(repoRoot, args.sidecarDir), 'binaries', `reqly-server-${target.rustTriple}${target.sidecarExt}`) : '(--sidecar-dir verilmedi)'}`,
-    `  arşiv        : ${args.archive ? `dist/Reqly-${args.version}-${target.nodePlatform === 'win32' ? 'win' : target.nodePlatform}-${target.nodeArch}.${target.archive}` : '(--no-archive)'}`,
+    `  sidecar      : ${args.sidecarDir ? path.join(path.resolve(repoRoot, args.sidecarDir), 'binaries', `reqster-server-${target.rustTriple}${target.sidecarExt}`) : '(--sidecar-dir verilmedi)'}`,
+    `  arşiv        : ${args.archive ? `dist/Reqster-${args.version}-${target.nodePlatform === 'win32' ? 'win' : target.nodePlatform}-${target.nodeArch}.${target.archive}` : '(--no-archive)'}`,
     `  better-sqlite3 ${sqlite.version}: prebuild-install --platform ${target.nodePlatform} --arch ${target.nodeArch} → ` +
       `https://github.com/WiseLibs/better-sqlite3/releases/download/v${sqlite.version}/better-sqlite3-v${sqlite.version}-node-v${abi}-${target.nodePlatform}-${target.nodeArch}.tar.gz`,
     `  isolated-vm ${ivm.version}: prebuilds/${target.prebuildDir} → ` +
       (ivmFound.length > 0 ? `VAR (${ivmFound.join(', ')})` : `YOK — paket akışı burada durur. ${ivmMissingMessage(target, abi)}`),
     '  adımlar:',
-    `    1. ${args.skipAppBuild ? 'frontend build atlanır' : 'npm run build -w @reqly/app'}`,
+    `    1. ${args.skipAppBuild ? 'frontend build atlanır' : 'npm run build -w @reqster/app'}`,
     '    2. esbuild → resources/server.cjs, worker.cjs; migrations/ kopyası',
     '    3. resources/ içine npm install --ignore-scripts; better-sqlite3 prebuild-install; isolated-vm ön-derleme seçimi',
     '    4. Node ikilisini indir + SHA-256 doğrula + arşivden çıkar',
@@ -512,12 +512,12 @@ function printPlan(targetName, target, nodeVersion, args) {
 function writeReadme(stageDir, target, version) {
   const exe = target.exeName;
   const text = [
-    `Reqly ${version}`,
+    `Reqster ${version}`,
     '',
     `Calistirmak icin: ${exe}`,
     'Tarayici otomatik acilir (http://127.0.0.1:7357). Konsol penceresini kapatmak uygulamayi durdurur.',
     '',
-    'Veri: bu klasorun yanindaki data/reqly.db dosyasinda tutulur (REQLY_DATA_DIR ile degistirilebilir).',
+    'Veri: bu klasorun yanindaki data/reqster.db dosyasinda tutulur (REQSTER_DATA_DIR ile degistirilebilir).',
     'resources/ klasoru exe ile AYNI dizinde kalmalidir.',
     '',
   ].join('\r\n');
@@ -527,24 +527,24 @@ function writeReadme(stageDir, target, version) {
 function archive(outDir, stageDir, target, version) {
   const distDir = path.join(repoRoot, 'dist');
   mkdirSync(distDir, { recursive: true });
-  const baseName = `Reqly-${version}-${target.nodePlatform === 'win32' ? 'win' : target.nodePlatform}-${target.nodeArch}`;
+  const baseName = `Reqster-${version}-${target.nodePlatform === 'win32' ? 'win' : target.nodePlatform}-${target.nodeArch}`;
   let out;
   if (target.archive === 'zip') {
     out = path.join(distDir, `${baseName}.zip`);
     rmSync(out, { force: true });
     const zip = new AdmZip();
-    zip.addLocalFolder(stageDir, 'Reqly');
+    zip.addLocalFolder(stageDir, 'Reqster');
     zip.writeZip(out);
   } else {
     out = path.join(distDir, `${baseName}.tar.gz`);
     rmSync(out, { force: true });
-    run('tar', ['-czf', out, '-C', outDir, 'Reqly']);
+    run('tar', ['-czf', out, '-C', outDir, 'Reqster']);
   }
   return out;
 }
 
 /**
- * Tauri sidecar yerleşimi: exe `<sidecarDir>/binaries/reqly-server-<triple>[.exe]` olur (Tauri,
+ * Tauri sidecar yerleşimi: exe `<sidecarDir>/binaries/reqster-server-<triple>[.exe]` olur (Tauri,
  * `externalBin` girdisine hedef üçlüsünü kendisi ekleyerek arar), staged `resources/` ise
  * `<sidecarDir>/resources/` olarak kopyalanır (tauri.conf.json `bundle.resources`). Hedef
  * resources dizini eski bir paketleme kalıntısı taşımasın diye önce silinir.
@@ -553,7 +553,7 @@ function emitSidecar(sidecarDir, stageDir, target) {
   const dir = path.resolve(repoRoot, sidecarDir);
   const binariesDir = path.join(dir, 'binaries');
   mkdirSync(binariesDir, { recursive: true });
-  const sidecarExe = path.join(binariesDir, `reqly-server-${target.rustTriple}${target.sidecarExt}`);
+  const sidecarExe = path.join(binariesDir, `reqster-server-${target.rustTriple}${target.sidecarExt}`);
   copyFileSync(path.join(stageDir, target.exeName), sidecarExe);
   chmodSync(sidecarExe, 0o755);
   log(`sidecar ikilisi → ${sidecarExe}`);
@@ -578,7 +578,7 @@ async function main() {
 
   const outDir = path.join(repoRoot, 'dist/package', args.target);
   const cacheDir = path.join(repoRoot, 'dist/package/.cache');
-  const stageDir = path.join(outDir, 'Reqly');
+  const stageDir = path.join(outDir, 'Reqster');
   const resourcesDir = path.join(stageDir, 'resources');
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(resourcesDir, { recursive: true });

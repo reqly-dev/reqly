@@ -1,4 +1,4 @@
-import type { PostmanApiImportResult, PostmanInventory, PostmanInventoryWorkspace } from '@reqly/shared';
+import type { PostmanApiImportResult, PostmanInventory, PostmanInventoryWorkspace } from '@reqster/shared';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { T } from '../../components/T';

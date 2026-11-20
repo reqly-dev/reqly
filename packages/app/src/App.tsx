@@ -1,7 +1,7 @@
 import { CircleHelp, Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DialogHost } from './components/Dialog';
-import { ReqlyMark } from './components/ReqlyMark';
+import { ReqsterMark } from './components/ReqsterMark';
 import { showShortcutsHelp } from './components/ShortcutsHelp';
 import { SplitPane } from './components/SplitPane';
 import { TabBar } from './components/TabBar';
@@ -61,8 +61,8 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <span className="logo">
-          <ReqlyMark />
-          Reqly
+          <ReqsterMark />
+          Reqster
         </span>
         <span className="spacer" />
         <EnvironmentMenu />
@@ -90,7 +90,7 @@ export default function App() {
       <SplitPane
         className="layout"
         direction="row"
-        storageKey="reqly.layout.sidebarWidth"
+        storageKey="reqster.layout.sidebarWidth"
         defaultSize={280}
         minFirst={200}
         minSecond={360}
@@ -120,7 +120,7 @@ export default function App() {
             <SplitPane
               className="request-response-split"
               direction="column"
-              storageKey="reqly.layout.requestPaneRatio"
+              storageKey="reqster.layout.requestPaneRatio"
               defaultSize={0.5}
               minFirst={200}
               minSecond={120}

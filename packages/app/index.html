@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reqly</title>
+    <title>Reqster</title>
     <!-- Tema ilk boyamadan önce: sunucu data-theme'i basmışsa (paketlenmiş/start modu, kayıtlı ayar) o kazanır;
          yoksa lib/theme.ts ile aynı kural (localStorage önbelleği → sistem → koyu) -->
     <script>
@@ -11,7 +11,7 @@
         var t = document.documentElement.dataset.theme || null;
         if (t !== 'light' && t !== 'dark') {
           try {
-            t = localStorage.getItem('reqly.theme');
+            t = localStorage.getItem('reqster.theme');
           } catch (e) {}
         }
         if (t !== 'light' && t !== 'dark') {
@@ -23,7 +23,7 @@
         var l = document.documentElement.dataset.lang || null;
         if (l !== 'tr' && l !== 'en') {
           try {
-            l = localStorage.getItem('reqly.language');
+            l = localStorage.getItem('reqster.language');
           } catch (e) {}
         }
         if (l !== 'tr' && l !== 'en') {

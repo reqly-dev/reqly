@@ -4,8 +4,8 @@ import type {
   ImportReport,
   KeyValueItem,
   RequestBody,
-} from '@reqly/shared';
-import { HTTP_METHODS } from '@reqly/shared';
+} from '@reqster/shared';
+import { HTTP_METHODS } from '@reqster/shared';
 import { getDb } from '../db/connection.js';
 import { createCollection } from '../db/repositories/collections.js';
 import { createEnvironment } from '../db/repositories/environments.js';
@@ -472,7 +472,7 @@ export function importPostmanEnvironment(json: unknown, workspaceId: string): Im
 
 /**
  * Postman global değişkenleri (Postman API `GET /workspaces/{id}/global-variables` yanıtındaki `values[]`
- * ya da globals export dosyasındaki `values[]`) → Reqly global değişkenleri (workspace scope).
+ * ya da globals export dosyasındaki `values[]`) → Reqster global değişkenleri (workspace scope).
  * Aynı anahtar varsa üzerine yazar (`upsertVariable`); tek transaction.
  */
 export function importPostmanGlobals(values: unknown, workspaceId: string): ImportReport {

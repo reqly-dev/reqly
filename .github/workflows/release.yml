@@ -51,7 +51,7 @@ jobs:
       - run: npm run typecheck
       - run: node launcher/package.mjs --target linux-x64 --version "${{ needs.meta.outputs.version }}"
       # The released tar.gz is the exact file that passed the smoke test.
-      - run: node launcher/smoke.mjs dist/package/linux-x64/Reqly/reqly
+      - run: node launcher/smoke.mjs dist/package/linux-x64/Reqster/reqster
       - uses: actions/upload-artifact@v4
         with:
           name: linux
@@ -78,7 +78,7 @@ jobs:
           workspaces: src-tauri
       - run: npm ci --no-audit --no-fund
       # package.mjs runs `npm` without a shell, which does not resolve npm.cmd on Windows: build the frontend here.
-      - run: npm run build -w @reqly/app
+      - run: npm run build -w @reqster/app
       - name: Sidecar (win-x64)
         run: |
           exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
@@ -91,7 +91,7 @@ jobs:
           exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
           set -euo pipefail
           npx tauri build --target x86_64-pc-windows-msvc --bundles nsis --config "{\"version\":\"${APP_VERSION}\"}"
-          exe="src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Reqly_${APP_VERSION}_x64-setup.exe"
+          exe="src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Reqster_${APP_VERSION}_x64-setup.exe"
           test -f "$exe" || { ls -la src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/ || true; exit 1; }
           mkdir -p dist && cp "$exe" dist/
           if [[ -f "$exe.sig" ]]; then cp "$exe.sig" dist/; else echo "::warning::no updater signature (.sig)"; fi
@@ -133,7 +133,7 @@ jobs:
         with:
           workspaces: src-tauri
       - run: npm ci --no-audit --no-fund
-      - run: npm run build -w @reqly/app
+      - run: npm run build -w @reqster/app
 
       - name: Sidecar (darwin-arm64)
         run: |
@@ -146,13 +146,13 @@ jobs:
         run: |
           exec > >(tee -a "$RUNNER_TEMP/ci.log") 2>&1
           set -euo pipefail
-          # the updater package (Reqly.app.tar.gz) is only produced for the `app` bundle → --bundles app,dmg
+          # the updater package (Reqster.app.tar.gz) is only produced for the `app` bundle → --bundles app,dmg
           npx tauri build --target aarch64-apple-darwin --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\"}"
           mkdir -p dist
           cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg dist/
-          up=src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Reqly.app.tar.gz
+          up=src-tauri/target/aarch64-apple-darwin/release/bundle/macos/Reqster.app.tar.gz
           if [[ -f "$up.sig" ]]; then
-            cp "$up" "dist/Reqly_${APP_VERSION}_aarch64.app.tar.gz"; cp "$up.sig" "dist/Reqly_${APP_VERSION}_aarch64.app.tar.gz.sig"
+            cp "$up" "dist/Reqster_${APP_VERSION}_aarch64.app.tar.gz"; cp "$up.sig" "dist/Reqster_${APP_VERSION}_aarch64.app.tar.gz.sig"
           else echo "::warning::no updater package (aarch64)"; fi
 
       # isolated-vm ships no darwin-x64 prebuild: build it here for x64 and put it where package.mjs looks for it.
@@ -179,9 +179,9 @@ jobs:
           set -euo pipefail
           npx tauri build --target x86_64-apple-darwin --bundles app,dmg --config "{\"version\":\"${APP_VERSION}\"}"
           cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg dist/
-          up=src-tauri/target/x86_64-apple-darwin/release/bundle/macos/Reqly.app.tar.gz
+          up=src-tauri/target/x86_64-apple-darwin/release/bundle/macos/Reqster.app.tar.gz
           if [[ -f "$up.sig" ]]; then
-            cp "$up" "dist/Reqly_${APP_VERSION}_x64.app.tar.gz"; cp "$up.sig" "dist/Reqly_${APP_VERSION}_x64.app.tar.gz.sig"
+            cp "$up" "dist/Reqster_${APP_VERSION}_x64.app.tar.gz"; cp "$up.sig" "dist/Reqster_${APP_VERSION}_x64.app.tar.gz.sig"
           else echo "::warning::no updater package (x64)"; fi
           ls -la dist/
       # Ham log'lar yalnızca oturum açmış kullanıcıya açık; düşen adımın son satırlarını herkese açık hata notu yap
@@ -222,9 +222,9 @@ jobs:
           cat > notes.md <<EOF
           | Platform | File |
           |---|---|
-          | Windows | \`Reqly_${V}_x64-setup.exe\` (installer) · \`Reqly_${V}_x64-portable.zip\` (no installation, run \`Reqly\\reqly.exe\`) |
-          | macOS | \`Reqly_${V}_aarch64.dmg\` (Apple Silicon) · \`Reqly_${V}_x64.dmg\` (Intel) |
-          | Linux | \`Reqly-${V}-linux-x64.tar.gz\` (server, open http://127.0.0.1:7357) |
+          | Windows | \`Reqster_${V}_x64-setup.exe\` (installer) · \`Reqster_${V}_x64-portable.zip\` (no installation, run \`Reqster\\reqster.exe\`) |
+          | macOS | \`Reqster_${V}_aarch64.dmg\` (Apple Silicon) · \`Reqster_${V}_x64.dmg\` (Intel) |
+          | Linux | \`Reqster-${V}-linux-x64.tar.gz\` (server, open http://127.0.0.1:7357) |
 
           Builds are not code-signed yet: Windows SmartScreen may warn (More info → Run anyway); on macOS use
           System Settings → Privacy & Security → Open Anyway on first launch. \`*.sig\` and \`*.app.tar.gz\` files are
@@ -234,5 +234,5 @@ jobs:
           if gh release view "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" dist/* --clobber -R "$GITHUB_REPOSITORY"
           else
-            gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" --title "Reqly $V" --notes-file notes.md "${pre[@]}"
+            gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" --title "Reqster $V" --notes-file notes.md "${pre[@]}"
           fi

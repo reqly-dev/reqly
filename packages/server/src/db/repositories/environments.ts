@@ -1,4 +1,4 @@
-import type { EnvironmentModel } from '@reqly/shared';
+import type { EnvironmentModel } from '@reqster/shared';
 import { getDb } from '../connection.js';
 import { newId } from '../ids.js';
 

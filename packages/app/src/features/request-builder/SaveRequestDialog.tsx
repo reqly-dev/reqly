@@ -1,4 +1,4 @@
-import type { CollectionTree, FolderModel } from '@reqly/shared';
+import type { CollectionTree, FolderModel } from '@reqster/shared';
 import { ChevronDown, ChevronRight, Folder, Plus, X } from 'lucide-react';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { T } from '../../components/T';

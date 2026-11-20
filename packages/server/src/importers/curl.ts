@@ -6,7 +6,7 @@ import {
   type HttpMethod,
   type KeyValueItem,
   type RequestBody,
-} from '@reqly/shared';
+} from '@reqster/shared';
 import { msg } from '../i18n/context.js';
 
 /**

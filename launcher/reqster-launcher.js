@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Reqly.exe'nin (ve Linux'ta `reqly` ikilisinin) gömülü gövdesi.
+ * Reqster.exe'nin (ve Linux'ta `reqster` ikilisinin) gömülü gövdesi.
  *
  * `launcher/package.mjs` bu dosyayı Node'un Single Executable Application (SEA) özelliğiyle
  * resmî bir Node ikilisinin içine gömer. Exe'nin yanındaki `resources/` dizininde sunucu
@@ -11,10 +11,10 @@
  *
  * Üç çalışma modu vardır:
  * - Varsayılan: sunucuyu başlatır, hazır olunca tarayıcıyı açar.
- * - `REQLY_SIDECAR=1` (Tauri kabuğu): sunucuyu başlatır, tarayıcı AÇMAZ ve portu beklemez;
- *   hazır sinyalini (`REQLY_READY <url>`) sunucu kendisi stdout'a yazar, kabuk onu okur.
- *   Port `REQLY_PORT` ile (0 = dinamik), kaynak dizini `REQLY_RESOURCES_DIR` ile verilir.
- * - `REQLY_WORKER_MODE=1`: sunucunun script sandbox'ı için child process. Sunucu, Node SEA'da
+ * - `REQSTER_SIDECAR=1` (Tauri kabuğu): sunucuyu başlatır, tarayıcı AÇMAZ ve portu beklemez;
+ *   hazır sinyalini (`REQSTER_READY <url>`) sunucu kendisi stdout'a yazar, kabuk onu okur.
+ *   Port `REQSTER_PORT` ile (0 = dinamik), kaynak dizini `REQSTER_RESOURCES_DIR` ile verilir.
+ * - `REQSTER_WORKER_MODE=1`: sunucunun script sandbox'ı için child process. Sunucu, Node SEA'da
  *   `process.execPath` her zaman gömülü script'i çalıştırdığı için worker'ı bu ortam
  *   değişkeniyle ayırt eder (bkz. packages/server/src/scripting/host.ts).
  */
@@ -26,8 +26,15 @@ const crypto = require('node:crypto');
 const path = require('node:path');
 const fs = require('node:fs');
 
-// Taşınabilir modda da REQLY_PORT'a uyulur (yan yana ikinci örnek / testler); geçersizse 7357
-const PORT = Number.parseInt(process.env.REQLY_PORT || '', 10) || 7357;
+// Eski ad (Reqly) döneminin REQLY_* değişkenleri: yenisi verilmemişse değeri taşınır (bkz. server/src/envCompat.ts)
+for (const [key, value] of Object.entries(process.env)) {
+  if (key.startsWith('REQLY_') && value !== undefined && process.env['REQSTER_' + key.slice(6)] === undefined) {
+    process.env['REQSTER_' + key.slice(6)] = value;
+  }
+}
+
+// Taşınabilir modda da REQSTER_PORT'a uyulur (yan yana ikinci örnek / testler); geçersizse 7357
+const PORT = Number.parseInt(process.env.REQSTER_PORT || '', 10) || 7357;
 
 function isSingleExecutable() {
   try {
@@ -39,7 +46,7 @@ function isSingleExecutable() {
 
 if (!isSingleExecutable()) {
   console.error(
-    'Bu dosya Reqly.exe icine gomulmek icin yazilmistir; dogrudan node ile calistirilmaz.\n' +
+    'Bu dosya Reqster.exe icine gomulmek icin yazilmistir; dogrudan node ile calistirilmaz.\n' +
       'Gelistirme icin: npm run dev   |   paket uretmek icin: node launcher/package.mjs --target win-x64',
   );
   process.exit(2);
@@ -47,53 +54,53 @@ if (!isSingleExecutable()) {
 
 const exeDir = path.dirname(process.execPath);
 // Tauri kabuğu resources/ dizinini kendi resource_dir()'ından verir; taşınabilir paketle exe'nin yanındadır
-const resourcesDir = process.env.REQLY_RESOURCES_DIR || path.join(exeDir, 'resources');
-const sidecarMode = process.env.REQLY_SIDECAR === '1';
+const resourcesDir = process.env.REQSTER_RESOURCES_DIR || path.join(exeDir, 'resources');
+const sidecarMode = process.env.REQSTER_SIDECAR === '1';
 
 if (!fs.existsSync(path.join(resourcesDir, 'server.cjs'))) {
   console.error('resources/ dizini bulunamadi: ' + resourcesDir);
-  console.error('Reqly.exe, indirilen arsivdeki resources klasoruyle AYNI dizinde durmalidir.');
+  console.error('Reqster.exe, indirilen arsivdeki resources klasoruyle AYNI dizinde durmalidir.');
   process.exit(2);
 }
 
 // Sunucu ve worker bundle'ları yollarını buradan çözer (packages/server/src/paths.ts)
-process.env.REQLY_RESOURCES_DIR = resourcesDir;
+process.env.REQSTER_RESOURCES_DIR = resourcesDir;
 // SEA içindeki require yalnızca yerleşik modülleri yükler; diskten yükleme için ayrı bir require
 const load = createRequire(path.join(resourcesDir, 'package.json'));
 
-if (process.env.REQLY_WORKER_MODE === '1') {
+if (process.env.REQSTER_WORKER_MODE === '1') {
   load(path.join(resourcesDir, 'worker.cjs'));
 } else {
   startServer();
 }
 
 function startServer() {
-  // Taşınabilir uygulama: veri exe'nin yanındaki data/ klasöründe (kullanıcı REQLY_DATA_DIR ile ezebilir)
-  process.env.REQLY_DATA_DIR = process.env.REQLY_DATA_DIR || path.join(exeDir, 'data');
+  // Taşınabilir uygulama: veri exe'nin yanındaki data/ klasöründe (kullanıcı REQSTER_DATA_DIR ile ezebilir)
+  process.env.REQSTER_DATA_DIR = process.env.REQSTER_DATA_DIR || path.join(exeDir, 'data');
   // Oturum token'ı: sunucu her isteği bu token'la (çerez/başlık) doğrular, böylece aynı
   // makinedeki başka kullanıcılar ya da yerel siteler API'yi kullanamaz. Tarayıcı/kabuk adresi
-  // `?reqly_token=` ile açar, sunucu çerezi kurar. Kimlik doğrulayan bir katmanın (Cloudflare Access)
-  // arkasındaki Docker container'ı (deploy/Dockerfile) REQLY_AUTH=off ile kapatır.
-  if (!process.env.REQLY_SESSION_TOKEN && process.env.REQLY_AUTH !== 'off') {
-    process.env.REQLY_SESSION_TOKEN = crypto.randomBytes(32).toString('hex');
+  // `?reqster_token=` ile açar, sunucu çerezi kurar. Kimlik doğrulayan bir katmanın (Cloudflare Access)
+  // arkasındaki Docker container'ı (deploy/Dockerfile) REQSTER_AUTH=off ile kapatır.
+  if (!process.env.REQSTER_SESSION_TOKEN && process.env.REQSTER_AUTH !== 'off') {
+    process.env.REQSTER_SESSION_TOKEN = crypto.randomBytes(32).toString('hex');
   }
 
   console.log('=======================================');
-  console.log(' Reqly baslatiliyor...');
-  console.log(' Veri klasoru: ' + process.env.REQLY_DATA_DIR);
+  console.log(' Reqster baslatiliyor...');
+  console.log(' Veri klasoru: ' + process.env.REQSTER_DATA_DIR);
   console.log('=======================================');
 
   load(path.join(resourcesDir, 'server.cjs'));
 
-  // Sidecar: port dinamik olabilir (REQLY_PORT=0), 7357'yi yoklamak anlamsız; hazır sinyalini
+  // Sidecar: port dinamik olabilir (REQSTER_PORT=0), 7357'yi yoklamak anlamsız; hazır sinyalini
   // sunucu kendisi yazar, tarayıcıyı da kabuk (Tauri penceresi) üstlenir.
   if (sidecarMode) return;
 
   waitForServer(() => {
-    const token = process.env.REQLY_SESSION_TOKEN;
-    const url = 'http://127.0.0.1:' + PORT + '/' + (token ? '?reqly_token=' + token : '');
-    console.log('Reqly hazir -> ' + url);
-    if (process.env.REQLY_NO_BROWSER === '1') return;
+    const token = process.env.REQSTER_SESSION_TOKEN;
+    const url = 'http://127.0.0.1:' + PORT + '/' + (token ? '?reqster_token=' + token : '');
+    console.log('Reqster hazir -> ' + url);
+    if (process.env.REQSTER_NO_BROWSER === '1') return;
     console.log('Tarayici aciliyor... (bu pencereyi kapatmak sunucuyu da durdurur)');
     openBrowser(url);
   });

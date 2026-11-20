@@ -7,14 +7,14 @@ import { fileURLToPath } from 'node:url';
  *
  * - **Geliştirme** (`tsx`): yollar kaynak ağacına göre çözülür (`import.meta.url`).
  * - **Paketlenmiş** (`launcher/package.mjs` çıktısı): sunucu tek bir CJS bundle'dır ve
- *   kaynak ağacı yoktur. Başlatıcı (`Reqly.exe` içindeki `reqly-launcher.js`)
- *   `REQLY_RESOURCES_DIR` ortam değişkenini verir; frontend (`app/`), migration'lar
+ *   kaynak ağacı yoktur. Başlatıcı (`Reqster.exe` içindeki `reqster-launcher.js`)
+ *   `REQSTER_RESOURCES_DIR` ortam değişkenini verir; frontend (`app/`), migration'lar
  *   (`migrations/`) ve script worker bundle'ı (`worker.cjs`) hep bu dizinin altındadır.
  *
  * `import.meta.url` bundle içinde esbuild tarafından bundle dosyasının kendi URL'ine
  * çevrilir, yine de paketlenmiş modda kaynak-göreli yollara hiç başvurulmaz.
  */
-const resourcesDir = process.env.REQLY_RESOURCES_DIR;
+const resourcesDir = process.env.REQSTER_RESOURCES_DIR;
 
 export const isPackaged = resourcesDir !== undefined;
 
@@ -34,7 +34,7 @@ export const migrationsDir = resourcesDir
   : fromSource('db/migrations');
 
 /**
- * `REQLY_DATA_DIR` verilmediğinde kullanılacak veri dizini.
+ * `REQSTER_DATA_DIR` verilmediğinde kullanılacak veri dizini.
  * Paketlenmiş modda başlatıcı bunu exe'nin yanına (`<exe dizini>/data`) ayarlar; buradaki
  * değer yalnızca güvenlik ağıdır.
  */
@@ -43,12 +43,12 @@ export const defaultDataDir = resourcesDir
   : fromSource('../../../data');
 
 /**
- * Uygulama sürümü (dışa aktarma paketlerinde `app: "reqly/<sürüm>"`). Öncelik: `REQLY_VERSION` ortam
+ * Uygulama sürümü (dışa aktarma paketlerinde `app: "reqster/<sürüm>"`). Öncelik: `REQSTER_VERSION` ortam
  * değişkeni (paketlenmiş mod; `resources/package.json` sürüm taşımaz) → geliştirmede
  * `packages/server/package.json` → `0.0.0`.
  */
 export function appVersion(): string {
-  if (process.env.REQLY_VERSION) return process.env.REQLY_VERSION;
+  if (process.env.REQSTER_VERSION) return process.env.REQSTER_VERSION;
   if (isPackaged && resourcesDir) {
     // launcher/package.mjs her pakete resources/build-info.json yazar ({version, gitSha, node, target, builtAt});
     // CI etiket koşusunda version = etiket sürümü, main'de 0.0.0-dev.<sha>

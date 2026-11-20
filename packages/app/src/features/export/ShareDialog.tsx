@@ -1,4 +1,4 @@
-import type { ExportOptions } from '@reqly/shared';
+import type { ExportOptions } from '@reqster/shared';
 import { useEffect, useState } from 'react';
 import { api } from '../../api/client';
 import { T } from '../../components/T';
@@ -9,7 +9,7 @@ import { SecretsToggle } from './SecretsToggle';
 
 /**
  * Paylaş / dışa aktar diyaloğu: `GET /api/export/options` listesinden koleksiyon, ortam ve global
- * değişkenler seçilir; `POST /api/export/bundle` tek `.reqly.json` paketi indirir.
+ * değişkenler seçilir; `POST /api/export/bundle` tek `.reqster.json` paketi indirir.
  */
 export function showShareDialog(): void {
   void dialog.custom<void>({
@@ -34,7 +34,7 @@ function allKeysOf(options: ExportOptions): SelectionKey[] {
 
 function bundleFileName(): string {
   const stamp = new Date().toISOString().slice(0, 10);
-  return `reqly-${stamp}.reqly.json`;
+  return `reqster-${stamp}.reqster.json`;
 }
 
 function ShareDialog({ close }: { close: () => void }) {

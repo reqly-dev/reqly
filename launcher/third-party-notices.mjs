@@ -36,7 +36,7 @@ const lock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
 for (const [path, meta] of Object.entries(lock.packages)) {
   if (!path.startsWith('node_modules/') || meta.dev || meta.link) continue;
   const name = path.slice(path.lastIndexOf('node_modules/') + 'node_modules/'.length);
-  if (name.startsWith('@reqly/')) continue;
+  if (name.startsWith('@reqster/')) continue;
   components.push({
     name,
     version: meta.version ?? '?',
@@ -125,7 +125,7 @@ for (const c of all) {
 const line = (c) => `- ${c.name} ${c.version} — ${c.license} (${c.source})`;
 let md = `# Üçüncü taraf bildirimleri / Third-party notices
 
-Reqly Apache-2.0 lisanslıdır (bkz. \`LICENSE\`, \`NOTICE\`). Dağıtılan paket aşağıdaki üçüncü taraf
+Reqster Apache-2.0 lisanslıdır (bkz. \`LICENSE\`, \`NOTICE\`). Dağıtılan paket aşağıdaki üçüncü taraf
 bileşenleri içerir; her biri kendi lisansıyla dağıtılır.
 
 Bu dosya \`node launcher/third-party-notices.mjs${withCargo ? ' --cargo' : ''}\` ile üretilir, elle düzenlenmez.

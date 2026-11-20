@@ -1,4 +1,4 @@
-import { curlImportSchema, postmanApiImportSchema, postmanApiInventorySchema } from '@reqly/shared';
+import { curlImportSchema, postmanApiImportSchema, postmanApiInventorySchema } from '@reqster/shared';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { getDefaultWorkspace } from '../db/repositories/workspaces.js';
 import {
@@ -6,7 +6,7 @@ import {
   importFromPostmanApi,
   PostmanApiError,
 } from '../importers/postman-api.js';
-import { importBundle, isReqlyBundle } from '../importers/bundle.js';
+import { importBundle, isReqsterBundle } from '../importers/bundle.js';
 import { CurlParseError, parseCurl } from '../importers/curl.js';
 import { importPostmanCollection, importPostmanEnvironment } from '../importers/postman-v2.js';
 import { parseBody } from './helpers.js';
@@ -21,18 +21,18 @@ function sendPostmanApiError(err: unknown, reply: FastifyReply): FastifyReply {
 
 export function importRoutes(app: FastifyInstance): void {
   // Body: Postman export dosyasının JSON içeriği (olduğu gibi). "Dosyadan…" tek kapı olsun diye bir
-  // Reqly paketi (`format: "reqly-bundle"`) seçilirse paket importer'ına yönlenir.
+  // Reqster paketi (`format: "reqster-bundle"`) seçilirse paket importer'ına yönlenir.
   app.post('/import/postman', (req, reply) => {
     const workspace = getDefaultWorkspace();
     try {
-      if (isReqlyBundle(req.body)) return importBundle(req.body, workspace.id);
+      if (isReqsterBundle(req.body)) return importBundle(req.body, workspace.id);
       return importPostmanCollection(req.body, workspace.id);
     } catch (err) {
       return reply.code(400).send({ error: err instanceof Error ? err.message : String(err) });
     }
   });
 
-  // Body: `.reqly.json` paketi (ReqlyBundle). Tek transaction: bir parça bozuksa hiçbir şey yazılmaz.
+  // Body: `.reqster.json` paketi (ReqsterBundle). Tek transaction: bir parça bozuksa hiçbir şey yazılmaz.
   app.post('/import/bundle', (req, reply) => {
     const workspace = getDefaultWorkspace();
     try {

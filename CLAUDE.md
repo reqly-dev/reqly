@@ -4,9 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Proje Amacı
 
-**Reqly** — tamamen yerel çalışan, hafif ve veri gizliliği odaklı bir Postman alternatifi.
+**Reqster** — tamamen yerel çalışan, hafif ve veri gizliliği odaklı bir Postman alternatifi.
 Nihai hedef: telemetrisiz/hesapsız/bulutsuz, tek SQLite dosyasında yaşayan, Postman
 koleksiyonlarını içe aktarabilen ve sonunda Tauri ile paketlenecek bir masaüstü API istemcisi.
+
+**Ad değişikliği (1.0.0-rc.20):** eski adı **Reqly**'ydi (başka projelerle çakıştı). Bilerek ESKİ adla kalanlar:
+uygulama kimliği `tr.talhacigdem.reqly` (veri klasörü + updater zinciri), updater/site adresi `reqly.talhacigdem.tr` (yeni
+hostname gelene kadar), `reqly-wordmark.svg` (yeni wordmark çizilene kadar). Geri uyum: `REQLY_*` ortam değişkenleri
+`server/src/envCompat.ts` (+ başlatıcıdaki eşi) ile `REQSTER_*`'a kopyalanır; `reqly.db` açılışta `reqster.db`'ye taşınır
+(`db/connection.ts`); `reqly-bundle` paketleri içe alınır (`shared` `isBundleFormat`); Windows kurulumu eski "Reqly" kaydını
+sessizce kaldırır, veri kalır (`src-tauri/windows/installer-hooks.nsh`). Kısaltma ve script API'si `rq.*` değişmedi.
 
 Mimari kararların gerekçeleriyle tam dökümü **TASARIM.md**'dedir; bu dosya onun operasyonel özetidir.
 Tasarım değişikliği gerektiren bir iş yapılırken TASARIM.md de güncellenmelidir.
@@ -21,23 +28,23 @@ npm run dev:server       # yalnızca backend (tsx watch — dosya değişince ot
 npm run dev:app          # yalnızca Vite dev sunucusu (HMR)
 npm run typecheck        # tüm workspace'lerde tsc --noEmit
 npm run build            # shared → server → app sırasıyla derleme doğrulaması
-npm run build -w @reqly/app   # tek paket için (aynı kalıp diğer paketlerde de geçerli)
+npm run build -w @reqster/app   # tek paket için (aynı kalıp diğer paketlerde de geçerli)
 npm run start             # tek port (7357): app'i build eder + server'ı statik dosyaları da sunacak şekilde başlatır
 ```
 
 - **Masaüstü paketi (Tauri 2, `src-tauri/`)**: v1.0 kabuğu Tauri'dir. Pencere (WebView2 / WebKitGTK)
   Node sunucusunu **sidecar** olarak başlatır ve `http://127.0.0.1:<port>/` adresini yükler; frontend
   değişmez, Tauri IPC kullanılmaz (`capabilities/default.json` boş). Sözleşme: kabuk sidecar'a
-  `REQLY_SIDECAR=1`, `REQLY_PORT=0` (dinamik port), `REQLY_RESOURCES_DIR` (`resource_dir()/resources`),
-  `REQLY_DATA_DIR` (`app_data_dir()`, Windows'ta `%APPDATA%\tr.talhacigdem.reqly`) verir; sunucu `listen`
-  sonrası stdout'a `REQLY_READY http://127.0.0.1:<port>/` yazar, kabuk bunu görünce pencereyi
+  `REQSTER_SIDECAR=1`, `REQSTER_PORT=0` (dinamik port), `REQSTER_RESOURCES_DIR` (`resource_dir()/resources`),
+  `REQSTER_DATA_DIR` (`app_data_dir()`, Windows'ta `%APPDATA%\tr.talhacigdem.reqly`) verir; sunucu `listen`
+  sonrası stdout'a `REQSTER_READY http://127.0.0.1:<port>/` yazar, kabuk bunu görünce pencereyi
   yönlendirir (`src-tauri/src/lib.rs`); 30 sn içinde gelmez ya da süreç çökerse hata diyaloğu + çıkış.
   Pencere kapanınca sidecar öldürülür; kabuk çökerse sidecar stdin kapanışını görüp kendini kapatır.
   **Ana pencere** `tauri.conf.json`'da `create: false`; `setup`'ta `WebviewWindowBuilder::from_config` + `on_download` ile kurulur.
   **Dışa aktarma "Farklı kaydet"** (`src-tauri/src/download.rs`): frontend dosyayı yine `<a download>` blob'u olarak verir;
   kabuk indirmeyi geçici dizine alır (olay UI iş parçacığında senkron, içinde modal diyalog WebView2'de yeniden girişim riski),
   bitince asenkron kaydet diyaloğu (varsayılan İndirilenler, önerilen ad) açar, dosyayı taşır ve sayfaya `webview.eval` ile
-  `reqly:file-saved` / `reqly:file-save-failed` DOM olayı yollar (IPC değil); iptal sessiz. Sunucu sidecar modunda `index.html`'e
+  `reqster:file-saved` / `reqster:file-save-failed` DOM olayı yollar (IPC değil); iptal sessiz. Sunucu sidecar modunda `index.html`'e
   `data-shell="desktop"` basar → `lib/download.ts` `isDesktopShell()`: düğme "Kaydet…", bildirim kabuktan; tarayıcıda "indirildi" bildirimi.
   **Kabuk logu**: her `crate::rlog!` satırı stderr'e ve `<app_data_dir>/logs/shell.log`'a (Windows
   `%APPDATA%\tr.talhacigdem.reqly\logs\shell.log`, 1 MB'ta `shell.1.log`'a döner) yazılır; panik kancası da oraya
@@ -45,14 +52,14 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   Tuzak: `reqwest` eklenti yüzünden `rustls-no-provider` ile derlenir; kabukta reqwest istemcisi kurmadan
   önce `rustls::crypto::ring::default_provider().install_default()` çağrılmalı, yoksa rustls paniği `panic=abort` ile
   süreci sessizce öldürür (rc.9 Windows). Linux'ta kabuk `xvfb-run` ile koşturulup `shell.log` okunarak yeniden üretildi.
-  Sidecar adı `reqly-server` (Tauri, crate adı `reqly` ile aynı sidecar adını reddeder); script worker
+  Sidecar adı `reqster-server` (Tauri, crate adı `reqster` ile aynı sidecar adını reddeder); script worker
   `windowsHide: true` ile açılır ki GUI'den gizli başlatılan konsol süreci yeni pencere açmasın.
   **Uygulama içi güncelleme** (`src-tauri/src/update.rs`, `tauri-plugin-updater`): READY'den 5 sn
   sonra ayrı görev `GET /api/settings` → `update.auto_check` (yoksa açık) ve `GET /api/internal/proxy-url`
   (aktif proxy, yoksa doğrudan) okur, `https://reqly.talhacigdem.tr/updates/latest.json`'u denetler; yeni
   sürümde yerel diyalog "Şimdi kur / Sonra" ("Sonra" aynı sürüm için oturum boyunca susturur, denetim
   24 saatte bir yinelenir). Windows'ta NSIS `/P /UPDATE /R` (passive) ile kurulur ve uygulama kendini
-  yeniden açar; sidecar `on_before_exit`'te öldürülür (kilitli `reqly-server.exe`); macOS'ta `.app`
+  yeniden açar; sidecar `on_before_exit`'te öldürülür (kilitli `reqster-server.exe`); macOS'ta `.app`
   değiştirilip `app.restart()`. `network.verify_tls=false` ise updater da sertifika doğrulamaz (paketi
   minisign imzası korur). Yükleyici türü URL uzantısından değil içerikten (PE/MSI sihirli baytı) anlaşılır;
   dosya `.bin` gibi nötr adla sunulabilir. Manifest: `{version, notes, pub_date(RFC3339), platforms:
@@ -61,10 +68,10 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   verildiğinde `setup.exe.sig` / `.app.tar.gz` + `.sig` üretilir; `plugins.updater.pubkey` eşleşen açık
   anahtardır. Çalışma zamanı davranışı yalnızca gerçek Windows/macOS cihazda doğrulanır.
 - **Sidecar üretimi (`launcher/package.mjs`)**: resmî Node ikilisi + Node SEA ile gömülü başlatıcı
-  (`launcher/reqly-launcher.js`) ve `resources/` (esbuild ile tek dosyaya bundle'lanmış
+  (`launcher/reqster-launcher.js`) ve `resources/` (esbuild ile tek dosyaya bundle'lanmış
   `server.cjs`/`worker.cjs`, vite çıktısı, migration'lar, hedef platformun ön-derlenmiş
   `better-sqlite3`/`isolated-vm` ikilileri). `--sidecar-dir src-tauri --no-archive` ile çıktı
-  `src-tauri/binaries/reqly-server-<rust-triple>[.exe]` + `src-tauri/resources/` olur (git dışı);
+  `src-tauri/binaries/reqster-server-<rust-triple>[.exe]` + `src-tauri/resources/` olur (git dışı);
   `--sidecar-dir`siz çalıştırınca eski taşınabilir arşiv üretilir (Linux `tar.gz` headless/Docker ve
   sunucu kullanımı için kalır; eski Windows launcher zip'i dağıtılmaz — Windows'un taşınabilir zip'i Tauri
   yükünden `deploy/win-portable.sh` ile üretilir, aşağıda). Linux üzerinde Windows paketi üretilir,
@@ -74,17 +81,17 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   → ad-hoc `codesign --sign -`); Linux'ta istenirse betik dosya üretmeden durur, `--plan` yan etkisiz olarak URL/triple/
   ön-derleme durumunu yazdırır. isolated-vm'in darwin-x64 ön-derlemesi npm paketinde yoktur: CI onu kaynaktan derleyip
   kök `node_modules/isolated-vm/prebuilds/darwin-x64/isolated-vm.abi<ABI>.node` olarak koyar, betik oradan kopyalar.
-  Paketlenmiş modda sunucu yolları `REQLY_RESOURCES_DIR` üzerinden çözer (`server/src/paths.ts`);
+  Paketlenmiş modda sunucu yolları `REQSTER_RESOURCES_DIR` üzerinden çözer (`server/src/paths.ts`);
   script worker, `process.execPath`'in SEA'da her zaman gömülü script'i çalıştırması nedeniyle `fork`
-  yerine `REQLY_WORKER_MODE=1` ile aynı exe'nin ikinci kopyası olarak açılır (`scripting/host.ts`).
+  yerine `REQSTER_WORKER_MODE=1` ile aynı exe'nin ikinci kopyası olarak açılır (`scripting/host.ts`).
 - **Derleme ortamı**: Node sürümü `.nvmrc`'de sabittir (paketleme bunu zorlar). Node işleri gerekirse
   `docker run --rm -u 1000:1000 -e HOME=/tmp/h -v "$PWD":/w -w /w node:24-bookworm ...`; Tauri işleri
   builder imajında (`deploy/tauri-builder.Dockerfile`: Rust stable +
   Node 24.22.2 + NSIS 3.11 (kaynaktan; bookworm'un 3.08'i Tauri şablonuyla uyumsuz) + cargo-xwin ile
   Windows SDK önbelleği + webkit2gtk + xvfb). Windows kurulum dosyası Linux'ta çapraz derlenir:
-  `npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc` → `src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Reqly_<ver>_x64-setup.exe`.
+  `npx tauri build --runner cargo-xwin --target x86_64-pc-windows-msvc` → `src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/Reqster_<ver>_x64-setup.exe`.
   Linux: `npx tauri build --bundles deb`; pencere `xvfb-run` + `import -window root` ile ekran görüntüsü alınarak doğrulanır.
-  İmaj yalnızca yerel derleme içindir (`docker build -f deploy/tauri-builder.Dockerfile -t reqly-tauri-builder deploy/`).
+  İmaj yalnızca yerel derleme içindir (`docker build -f deploy/tauri-builder.Dockerfile -t reqster-tauri-builder deploy/`).
   Üçüncü taraf lisansları: `THIRD_PARTY_NOTICES.md`, `node launcher/third-party-notices.mjs --cargo` ile builder
   imajında yeniden üretilir (bağımlılık eklenince/güncellenince; elle düzenlenmez).
 - **CI (GitHub Actions, `.github/workflows/`)**: `ci.yml` — `main` push ve PR → typecheck + Linux paketi + duman testi
@@ -102,12 +109,12 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   manifest + package-lock yükselir, `Sürüm X` commit'i ve `vX` etiketi atılır, main + etiket push edilir
   (temiz ağaç ve `main` zorunlu; `--no-push` ile yalnızca yerel; `npm version` bilerek kullanılmaz, bkz. betik).
 - **Docker / public site**: `deploy/Dockerfile` Linux paketini headless imaja koyar (container'da
-  `REQLY_HOST=0.0.0.0`, `REQLY_AUTH=off`, veri `/data`; önüne kimlik doğrulayan bir kapı gerekir, README). İndirme ve
+  `REQSTER_HOST=0.0.0.0`, `REQSTER_AUTH=off`, veri `/data`; önüne kimlik doğrulayan bir kapı gerekir, README). İndirme ve
   updater sitesi (`reqly.talhacigdem.tr`) bu depoda değildir; GitHub Release'lerinden beslenir. Bakımcı notları
   (yerelde varsa): @../reqly-site/CLAUDE.md
 - Test altyapısı henüz yok. Doğrulama şu ana kadar `typecheck` + çalışan servera karşı curl ile
   uçtan uca API smoke testiyle yapılıyor (koleksiyon oluştur → değişken tanımla → execute → history kontrolü).
-- Veri `data/reqly.db` dosyasında (gitignore'da); `REQLY_DATA_DIR` ile taşınabilir.
+- Veri `data/reqster.db` dosyasında (gitignore'da); `REQSTER_DATA_DIR` ile taşınabilir.
   Temiz başlangıç için server kapalıyken bu dosyayı silmek yeterlidir (migration'lar açılışta koşar).
 
 ## Mimari (büyük resim)
@@ -122,7 +129,7 @@ npm workspaces monorepo, üç paket:
   `db/repositories/` (SQL yalnızca burada). `engine/executor.ts` istek yaşam döngüsünü yürütür,
   `engine/scriptRunner.ts` script zincirini orkestre eder, `scripting/` izole sandbox'ı barındırır,
   `importers/postman-v2.ts` Postman dönüşümünü yapar, `exporters/postman-v2.ts` tersini (Postman v2.1 export +
-  `.reqly.json` paylaşım paketi), `importers/bundle.ts` paketi tek transaction'da içe alır. Şema değişiklikleri yalnızca
+  `.reqster.json` paylaşım paketi), `importers/bundle.ts` paketi tek transaction'da içe alır. Şema değişiklikleri yalnızca
   `db/migrations/NNNN_*.sql` dosyalarıyla yapılır (migrate.ts açılışta sıralı uygular).
 - **`packages/app`** — React + Vite + zustand. `stores/appStore.ts` tek global store'dur ve
   **çoklu sekme** mimarisindedir: her `RequestTab` kendi taslağını, dirty durumunu, yanıtını ve
@@ -187,13 +194,13 @@ history'ye **snapshot** yazımı (secret değerler `«masked»` ile maskelenir) 
   `const t = useT(); t('settings.title')`, `{name}` yer tutucu `t('proxy.active', { name })`, çoğul `tn(count, '…_one', '…_other')`;
   bileşen dışı kodda (store, yardımcılar) `t()`/`tn()` doğrudan; hook kullanılamayan `dialog.custom` başlık/düğmelerinde `<T k="…"/>`.
   Yeni görünür metin (title/aria-label/placeholder dahil) **önce `tr.ts`'ye, sonra `en.ts`'ye** eklenir; bileşende sabit metin yazılmaz.
-  Dil ayarı `ui.language` (`auto|tr|en`, sunucuda; tema gibi `localStorage['reqly.language']` yalnızca ilk boyama önbelleği, sunucu
-  `index.html`'e `data-lang` basar). Tarih/sayı için `locale()` (`tr-TR`/`en-US`); her API isteği `X-Reqly-Lang: tr|en` başlığı taşır
+  Dil ayarı `ui.language` (`auto|tr|en`, sunucuda; tema gibi `localStorage['reqster.language']` yalnızca ilk boyama önbelleği, sunucu
+  `index.html`'e `data-lang` basar). Tarih/sayı için `locale()` (`tr-TR`/`en-US`); her API isteği `X-Reqster-Lang: tr|en` başlığı taşır
   (`api/client.ts`). Uygulamanın tüm görünür metinleri sözlükten gelir (2026-11-13); yeni metin eklerken
   önce `tr.ts`, `en.ts` eksiği typecheck'te görünür. Kalan: site `/en/` sayfası.
 - **Sunucu i18n (tr/en)**: sunucudan kullanıcıya giden her metin (`{error}` gövdeleri, zod 400 ayrıntıları, `ExecuteResult.error`,
   script log/test mesajları, import raporu) `server/src/i18n/messages.ts` sözlüğünden gelir (anahtar → `{ tr, en }`, `{name}` yer
-  tutucu; Türkçe metinler birebir eski metinler). Dil `X-Reqly-Lang: tr|en` başlığından; yok/bozuksa `tr`. Fastify `onRequest`
+  tutucu; Türkçe metinler birebir eski metinler). Dil `X-Reqster-Lang: tr|en` başlığından; yok/bozuksa `tr`. Fastify `onRequest`
   hook'u isteği `AsyncLocalStorage` bağlamına alır (`i18n/context.ts`), route dışı katmanlar imza değiştirmeden `msg(key, params)`
   çağırır. İki istisna: script worker ayrı süreçtir → dil `RunScriptRequest.language` ile IPC'den iner, worker/sandbox `t(lang, …)`
   kullanır, isolate'a `__meta.language` girer ve prelude `sandbox.*` alt kümesini iki dilli JSON tablo olarak gömüp `T(key, params)`
@@ -205,7 +212,7 @@ history'ye **snapshot** yazımı (secret değerler `«masked»` ile maskelenir) 
 - **Tema**: renkler yalnızca `styles.css` başındaki token'lardan gelir (`--bg*`, `--text*`, `--accent*`,
   `--highlight-*`, `--hover`, `--focus-ring`, `--shadow`, `--mask`, semantik `--green/--red/...`); bileşende
   sabit renk yazılmaz. Koyu tema `:root`, açık tema `html[data-theme="light"]`. Tercihin kalıcı kaynağı sunucudaki
-  `ui.theme` ayarıdır (`lib/theme.ts` → `lib/uiPrefs.ts`, `PATCH /api/settings`); `localStorage['reqly.theme']` yalnızca
+  `ui.theme` ayarıdır (`lib/theme.ts` → `lib/uiPrefs.ts`, `PATCH /api/settings`); `localStorage['reqster.theme']` yalnızca
   önbellektir çünkü Tauri her açılışta farklı port = farklı origin ile açar ve depolama boş başlar. Paketlenmiş/
   `start` modunda sunucu `index.html`'i `/` ve `/index.html` için `<html data-theme="…">` basarak verir (`Cache-Control:
   no-cache`); `index.html`'deki satır içi script bu değer varsa dokunmaz, yoksa localStorage → sistem → koyu. Bölme
@@ -216,10 +223,10 @@ history'ye **snapshot** yazımı (secret değerler `«masked»` ile maskelenir) 
   `lucide-react`: emoji/unicode simge kullanılmaz, `lib/icons.ts`'teki `iconProps` (16px, stroke 2) ile
   tutarlı boyut; font yerel "Inter var" (`public/fonts/`, OFL), uzak font yok. Üst bardaki açılır menüler ortak
   `components/DropdownMenu.tsx` (klavye + aria) üzerinden.
-  **Marka varlıkları**: kaynak SVG'ler `packages/app/src/assets/brand/` (`reqly-mark.svg`,
-  `reqly-mark-bold.svg` = aynı path + ~%3 kontur, 16–24 px için; `reqly-wordmark.svg`; birebir kopyaları reqly-site deposunun `site/assets/`'ında),
+  **Marka varlıkları**: kaynak SVG'ler `packages/app/src/assets/brand/` (`reqster-mark.svg`,
+  `reqster-mark-bold.svg` = aynı path + ~%3 kontur, 16–24 px için; `reqly-wordmark.svg`; birebir kopyaları reqly-site deposunun `site/assets/`'ında),
   hepsi `fill="currentColor"` tek `evenodd` path, sabit renk yok — renk `--accent`'ten gelir. Üst bar
-  `components/ReqlyMark.tsx` (path verisi bold SVG ile aynı; SVG değişirse bileşen de güncellenir). Favicon
+  `components/ReqsterMark.tsx` (path verisi bold SVG ile aynı; SVG değişirse bileşen de güncellenir). Favicon
   `public/favicon.svg` (kırmızı rx %22 kare + beyaz bold işaret); masaüstü ikonları ondan render edilen 1024 PNG ile
   builder container'ında `npx tauri icon <png> -o src-tauri/icons` — yalnızca `tauri.conf.json`'daki dosyalar +
   `icon.png` tutulur, üretilen Android/iOS/Square*/StoreLogo çıktıları silinir.
@@ -265,7 +272,7 @@ tüm process'i öldürür; child process bu riski ana sunucudan izole eder.
   kurtarılamaz). Çalıştırma bitince bekleyen çağrılar host'ta `AbortSignal` ile iptal edilir.
 - **`worker-entry.ts`** — child process giriş noktası. Geliştirmede `host.ts` tarafından
   `fork(path, { execArgv: ['--import', 'tsx/esm'] })` ile başlatılır; paketlenmiş modda
-  (`isPackaged`) aynı exe `REQLY_WORKER_MODE=1` ile `spawn` edilir ve başlatıcı
+  (`isPackaged`) aynı exe `REQSTER_WORKER_MODE=1` ile `spawn` edilir ve başlatıcı
   `resources/worker.cjs`'yi yükler (bkz. "Paketleme"). IPC kanalı kopunca worker kendini kapatır.
 - **`host.ts`** — `runScript(input, handlers)`: tek worker'ı lazy spawn eder, tüm çalıştırmaları
   sıraya alır (basit, düşük eşzamanlılıklı yerel araç için yeterli), çöken worker'ı bir sonraki
@@ -354,23 +361,23 @@ Tamamlananlar — Faz 1 + arayüz geliştirmeleri + Faz 2'nin script sandbox çe
   koleksiyon/ortam envanteri (`POST /api/import/postman-api/inventory`) ve seçilenlerin toplu içe aktarımı
   (`POST /api/import/postman-api`; koleksiyonlar/ortamlar mevcut importer'a, workspace global'leri `importPostmanGlobals`'a).
   Anahtar saklanmaz/loglanmaz; 401 anahtar reddi işlemi keser, tek öğe hatası `failed[]`'e düşer, 429'da bir kez yeniden
-  denenir. UI: İçe aktar ▾ → Postman'dan çek… (`features/import/`). Test için `REQLY_POSTMAN_API_BASE`.
+  denenir. UI: İçe aktar ▾ → Postman'dan çek… (`features/import/`). Test için `REQSTER_POSTMAN_API_BASE`.
 - **Dışa aktarma + paylaşım paketi** (2026-11-13): `exporters/postman-v2.ts` importer'ın simetriği —
   `exportCollection` Postman v2.1 (`info.schema` v2.1.0, iç içe `item`, yapılandırılmış `url` + `raw`, `header/query`
   `disabled`, `body` raw/urlencoded/formdata + `options.raw.language`, auth bearer/basic/apikey/noauth, `event[]`,
   `variable[]` `type: secret|default` + `disabled`), `exportEnvironment` (Postman environment, `_postman_variable_scope`),
-  `exportGlobals`, `buildBundle` (`ReqlyBundle`: `format: reqly-bundle`, `version: 1`, `app: reqly/<sürüm>` —
-  `paths.ts` `appVersion()`: `REQLY_VERSION` → server `package.json` → `0.0.0`), `exportOptions`. Uçlar
+  `exportGlobals`, `buildBundle` (`ReqsterBundle`: `format: reqster-bundle`, `version: 1`, `app: reqster/<sürüm>` —
+  `paths.ts` `appVersion()`: `REQSTER_VERSION` → server `package.json` → `0.0.0`), `exportOptions`. Uçlar
   (`api/export.routes.ts`): `GET /api/export/options`, `GET /api/export/collections/:id?secrets=0|1`,
   `GET /api/export/environments/:id?secrets=`, `POST /api/export/bundle` (`bundleExportSchema`); hepsi
   `Content-Disposition: attachment` (ASCII `filename` + RFC 5987 `filename*`; `<ad>.collection.json`,
-  `<ad>.environment.json` (içerik Postman biçiminde, ad nötr), `reqly-paket-<YYYY-MM-DD>.reqly.json`). **Secret kuralı:** `secrets=1` /
+  `<ad>.environment.json` (içerik Postman biçiminde, ad nötr), `reqster-paket-<YYYY-MM-DD>.reqster.json`). **Secret kuralı:** `secrets=1` /
   `includeSecrets=true` değilse secret değişkenler anahtarı ve `type: "secret"` ile ama **boş değerle** gider.
   İçe: `POST /api/import/bundle` (`importers/bundle.ts`; `format`/`version` denetimi 400, tüm parçalar tek
   `db.transaction` — iç importer transaction'ları savepoint'e dönüşür, bir parça bozuksa hiçbir şey yazılmaz
   `import.bundleFailed`), `secretsIncluded=false` ise `import.bundleSecretsEmpty` uyarısı (adlar listelenir);
-  `POST /api/import/postman` gövdesi `format: "reqly-bundle"` ise aynı yola yönlenir. Round-trip (import → export →
-  import → export birebir) ve `postman-collection` SDK parse'ı uçtan uca doğrulandı. Reqly'ye özgü ek alan üretilmez.
+  `POST /api/import/postman` gövdesi `format: "reqster-bundle"` ise aynı yola yönlenir. Round-trip (import → export →
+  import → export birebir) ve `postman-collection` SDK parse'ı uçtan uca doğrulandı. Reqster'ye özgü ek alan üretilmez.
 - **cURL kopyala / yapıştır** (2026-11-15): `importers/curl.ts` bash (`\\` devamı, `'…'`, `"…"`, `$'…'`) ve
   Windows cmd (`^` kaçışı/devamı + MSVCRT argüman kuralları; Chrome "Copy as cURL (cmd)") sözdizimini otomatik algılar;
   `Authorization` başlığı auth'a, query params'a taşınır; tanınmayan/aktarılamayan bayraklar `warnings`'e. `exporters/curl.ts`
@@ -388,13 +395,13 @@ Tamamlananlar — Faz 1 + arayüz geliştirmeleri + Faz 2'nin script sandbox çe
   `durationMs` anlamı değişmedi (ağ). UI: süre yazısının üzerinde waterfall açılır pencere. Dispatcher paylaşıldığı için probe
 connector'a değil isteğin `AsyncLocalStorage` bağlamına bağlanır (`withProbe`/`probedConnector`).
 - **Yerel kapı bekçisi** (2026-11-16; TASARIM.md §8/2): `security/localGuard.ts` her istekte (dil hook'undan
-  sonra) Host adını loopback (`127.0.0.1`/`localhost`/`[::1]`) + `REQLY_ALLOWED_HOSTS` ile sınar (DNS rebinding → 421; Host
-  yoksa geçer), durum değiştiren yöntemde yabancı `Origin`'i 403'ler, `REQLY_SESSION_TOKEN` varsa `X-Reqly-Token` başlığı ya da
-  `reqly_session_<port>` çerezi ister (401). Token'ı paketlenmiş başlatıcı üretir (`REQLY_AUTH=off` hariç; `deploy/Dockerfile`
-  kapatır, ad `REQLY_ALLOWED_HOSTS` ile verilir); READY satırı ve taşınabilir modun açtığı adres `?reqly_token=` taşır, sunucu
+  sonra) Host adını loopback (`127.0.0.1`/`localhost`/`[::1]`) + `REQSTER_ALLOWED_HOSTS` ile sınar (DNS rebinding → 421; Host
+  yoksa geçer), durum değiştiren yöntemde yabancı `Origin`'i 403'ler, `REQSTER_SESSION_TOKEN` varsa `X-Reqster-Token` başlığı ya da
+  `reqster_session_<port>` çerezi ister (401). Token'ı paketlenmiş başlatıcı üretir (`REQSTER_AUTH=off` hariç; `deploy/Dockerfile`
+  kapatır, ad `REQSTER_ALLOWED_HOSTS` ile verilir); READY satırı ve taşınabilir modun açtığı adres `?reqster_token=` taşır, sunucu
   çerezi kurup token'sız adrese 302 ile döner. Kabuk token'ı READY adresinden ayırır (`update::split_ready_url`), updater'ın
   yerel çağrılarına başlık olarak ekler, loga yazmaz. Geliştirmede (`npm run dev`/`start`) token yok, Host/Origin denetimi açık.
-  Sunucuya curl ile elle istek atarken paketli modda `-H "X-Reqly-Token: …"` gerekir. Duman testi kapıyı da sınar.
+  Sunucuya curl ile elle istek atarken paketli modda `-H "X-Reqster-Token: …"` gerekir. Duman testi kapıyı da sınar.
 - **Bağlantı yeniden kullanımı** (2026-11-16): `network.reuse_connections` (varsayılan açık, Ayarlar > Ağ).
   `engine/dispatcher.ts` havuzu; anahtar = verify_tls + max_redirects + aktif proxy (kimlik dahil, özet) → değişince eski
   havuz kapanır. Zaman aşımı istek başına interceptor'la. `sendWithStaleRetry`: havuzdan gelen bağlantı yanıtsız
@@ -415,7 +422,7 @@ script log/test sonuçları history'de kalıcı değil (yalnızca o çalıştır
 `isolated-vm@7` paketi Node ≥26 istiyor ama Node 24.15'te sorunsuz çalışıyor (bkz. `npm warn EBADENGINE`
 uyarısı — zararsız, göz ardı edilebilir).
 
-Depo: `https://github.com/reqly-dev/reqly` (CI, Release'ler, katkılar).
+Depo: `https://github.com/reqster-dev/reqster` (CI, Release'ler, katkılar).
 
 ## Yol Haritası
 
@@ -427,7 +434,7 @@ Depo: `https://github.com/reqly-dev/reqly` (CI, Release'ler, katkılar).
       script sandbox (rq.*/pm.* davranışları) için birim testleri, import→export round-trip testi
 
 ### Faz 3 — Paketleme ve genişletme
-- [x] Postman v2.1 **export** + `.reqly.json` paylaşım paketi (2026-11-13; round-trip doğrulandı)
+- [x] Postman v2.1 **export** + `.reqster.json` paylaşım paketi (2026-11-13; round-trip doğrulandı)
 - [x] **Tauri kabuğu** (2026-11-11): `src-tauri/`, sidecar sözleşmesi, Linux'ta çapraz derlenen
       Windows NSIS kurulum dosyası (bkz. "Masaüstü paketi"). Kalan: kod imzası,
       Linux deb/AppImage'ın Release'e eklenmesi, Windows'ta gerçek cihaz testi (kullanıcı).

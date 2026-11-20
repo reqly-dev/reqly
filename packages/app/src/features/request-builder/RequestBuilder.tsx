@@ -1,4 +1,4 @@
-import { HTTP_METHODS, type HttpMethod } from '@reqly/shared';
+import { HTTP_METHODS, type HttpMethod } from '@reqster/shared';
 import { useState, type ReactNode } from 'react';
 import { useT } from '../../lib/i18n';
 import { applyUrlText, buildUrl, sameParams } from '../../lib/urlQuery';

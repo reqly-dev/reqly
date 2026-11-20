@@ -21,7 +21,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Reqly version / Sürüm
+      label: Reqster version / Sürüm
       description: Settings → Updates shows the installed version (or use the file name you installed).
     validations:
       required: true

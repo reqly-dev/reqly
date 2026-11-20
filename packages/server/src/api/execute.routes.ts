@@ -1,4 +1,4 @@
-import { executeInputSchema } from '@reqly/shared';
+import { executeInputSchema } from '@reqster/shared';
 import type { FastifyInstance } from 'fastify';
 import { executeRequest } from '../engine/executor.js';
 import { parseBody } from './helpers.js';

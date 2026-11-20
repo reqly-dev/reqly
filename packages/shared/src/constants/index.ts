@@ -56,3 +56,14 @@ export const MASKED_VALUE = '«masked»';
 
 export const SERVER_PORT = 7357;
 export const SERVER_HOST = '127.0.0.1';
+
+/**
+ * Paylaşım paketinin `format` alanı. Uygulamanın eski adı Reqly iken üretilen paketler (`reqly-bundle`,
+ * `.reqly.json`) aynı yapıdadır ve içe alınmaya devam eder; dışa aktarma yalnızca yeni adı yazar.
+ */
+export const BUNDLE_FORMAT = 'reqster-bundle';
+export const LEGACY_BUNDLE_FORMATS: readonly string[] = ['reqly-bundle'];
+
+export function isBundleFormat(format: unknown): boolean {
+  return format === BUNDLE_FORMAT || (typeof format === 'string' && LEGACY_BUNDLE_FORMATS.includes(format));
+}

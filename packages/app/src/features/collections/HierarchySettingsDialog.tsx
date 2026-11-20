@@ -1,4 +1,4 @@
-import type { AuthConfig, CollectionModel, FolderModel, HierarchyPatch } from '@reqly/shared';
+import type { AuthConfig, CollectionModel, FolderModel, HierarchyPatch } from '@reqster/shared';
 import { useEffect, useState, type KeyboardEvent } from 'react';
 import { T } from '../../components/T';
 import { t, useT, type MessageKey } from '../../lib/i18n';

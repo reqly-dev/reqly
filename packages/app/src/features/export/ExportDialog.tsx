@@ -28,7 +28,7 @@ export function safeFileStem(name: string): string {
     .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_')
     .replace(/\s+/g, ' ')
     .slice(0, 80);
-  return stem || 'reqly';
+  return stem || 'reqster';
 }
 
 function ExportDialog({ target, close }: { target: ExportTarget; close: () => void }) {

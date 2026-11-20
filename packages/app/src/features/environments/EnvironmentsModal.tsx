@@ -1,4 +1,4 @@
-import type { VariableScope } from '@reqly/shared';
+import type { VariableScope } from '@reqster/shared';
 import { Copy, Download, Globe, Pencil, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useT } from '../../lib/i18n';

@@ -1,4 +1,4 @@
-import type { ExecuteTimings } from '@reqly/shared';
+import type { ExecuteTimings } from '@reqster/shared';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { locale, tn, useT, type MessageKey } from '../../lib/i18n';
 

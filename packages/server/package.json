@@ -1,10 +1,10 @@
 {
-  "name": "@reqly/server",
+  "name": "@reqster/server",
   "version": "1.0.0-rc.19",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/reqly-dev/reqly.git",
+    "url": "git+https://github.com/reqster-dev/reqster.git",
     "directory": "packages/server"
   },
   "private": true,
@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@fastify/static": "^9.1.0",
-    "@reqly/shared": "*",
+    "@reqster/shared": "*",
     "better-sqlite3": "^12.2.0",
     "fastify": "^5.2.0",
     "isolated-vm": "^7.0.0",

@@ -1,4 +1,4 @@
-import { bundleExportSchema, curlExportSchema } from '@reqly/shared';
+import { bundleExportSchema, curlExportSchema } from '@reqster/shared';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { getDefaultWorkspace } from '../db/repositories/workspaces.js';
 import {
@@ -80,7 +80,7 @@ export function exportRoutes(app: FastifyInstance): void {
     if (!body) return;
     try {
       const bundle = buildBundle(body, getDefaultWorkspace().id);
-      attachment(reply, `reqly-paket-${bundle.exportedAt.slice(0, 10)}`, '.reqly.json');
+      attachment(reply, `reqster-paket-${bundle.exportedAt.slice(0, 10)}`, '.reqster.json');
       return bundle;
     } catch (err) {
       return sendExportError(err, reply);

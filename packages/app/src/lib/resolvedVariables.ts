@@ -1,4 +1,4 @@
-import type { ResolvedVariable } from '@reqly/shared';
+import type { ResolvedVariable } from '@reqster/shared';
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { useAppStore } from '../stores/appStore';

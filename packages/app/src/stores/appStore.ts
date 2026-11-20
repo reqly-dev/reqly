@@ -18,7 +18,8 @@ import type {
   ProxyUpsert,
   RequestBody,
   RequestModel,
-} from '@reqly/shared';
+} from '@reqster/shared';
+import { isBundleFormat } from '@reqster/shared';
 import { create } from 'zustand';
 import { api } from '../api/client';
 import { showBundleImportReport } from '../features/import/BundleImportReportDialog';
@@ -588,8 +589,8 @@ export const useAppStore = create<AppState>((set, get) => {
         return;
       }
       const obj = json as { item?: unknown; values?: unknown; name?: unknown; format?: unknown };
-      // Reqly paylaşım paketi: koleksiyon + ortam + globals tek dosyada, atomik yüklenir
-      const isBundle = obj.format === 'reqly-bundle';
+      // Reqster paylaşım paketi: koleksiyon + ortam + globals tek dosyada, atomik yüklenir
+      const isBundle = isBundleFormat(obj.format);
       const isEnvironment = !isBundle && Array.isArray(obj.values) && obj.item === undefined;
       try {
         const report = await api.post<ImportReport>(

@@ -1,4 +1,4 @@
-import type { ResolvedVariable } from '@reqly/shared';
+import type { ResolvedVariable } from '@reqster/shared';
 import { Eye, EyeOff } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';

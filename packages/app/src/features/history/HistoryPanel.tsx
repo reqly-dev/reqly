@@ -1,4 +1,4 @@
-import type { HistorySummary } from '@reqly/shared';
+import type { HistorySummary } from '@reqster/shared';
 import { Fragment } from 'react';
 import { locale, t as translate, useT } from '../../lib/i18n';
 import { useAppStore } from '../../stores/appStore';

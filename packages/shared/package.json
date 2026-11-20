@@ -1,10 +1,10 @@
 {
-  "name": "@reqly/shared",
+  "name": "@reqster/shared",
   "version": "1.0.0-rc.19",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/reqly-dev/reqly.git",
+    "url": "git+https://github.com/reqster-dev/reqster.git",
     "directory": "packages/shared"
   },
   "private": true,

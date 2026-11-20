@@ -16,7 +16,7 @@ Only the latest release receives security fixes. The desktop app updates itself 
 
 ## Scope
 
-Reqly runs a local HTTP server that the desktop window talks to. Areas we consider security-relevant include:
+Reqster runs a local HTTP server that the desktop window talks to. Areas we consider security-relevant include:
 
 - the local server guard (Host / Origin checks, the per-session token) — DNS rebinding, CSRF, access by other local
   users or web pages;
@@ -25,5 +25,5 @@ Reqly runs a local HTTP server that the desktop window talks to. Areas we consid
 - secret variables leaking into history, logs or exports;
 - the update channel (signature verification of updates).
 
-Running the Linux build on a network without an authenticating proxy in front of it is out of scope: Reqly has no
+Running the Linux build on a network without an authenticating proxy in front of it is out of scope: Reqster has no
 login of its own by design (see the README).

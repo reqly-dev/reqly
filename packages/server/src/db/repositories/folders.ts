@@ -1,4 +1,4 @@
-import type { AuthConfig, FolderModel } from '@reqly/shared';
+import type { AuthConfig, FolderModel } from '@reqster/shared';
 import { getDb } from '../connection.js';
 import { newId } from '../ids.js';
 

@@ -1,4 +1,4 @@
-import type { CurlExportInput, CurlExportResult, CurlShell, KeyValueItem } from '@reqly/shared';
+import type { CurlExportInput, CurlExportResult, CurlShell, KeyValueItem } from '@reqster/shared';
 import { getFolderChainLeafToRoot, resolveEffectiveAuth } from '../core/hierarchy.js';
 import { buildResolver, collectSecretValues } from '../core/variables/resolve.js';
 import { getCollection } from '../db/repositories/collections.js';

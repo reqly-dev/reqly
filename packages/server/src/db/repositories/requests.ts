@@ -4,7 +4,7 @@ import type {
   KeyValueItem,
   RequestBody,
   RequestModel,
-} from '@reqly/shared';
+} from '@reqster/shared';
 import { getDb } from '../connection.js';
 import { newId } from '../ids.js';
 

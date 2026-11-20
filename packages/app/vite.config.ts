@@ -8,8 +8,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       // UI hedef API'ye asla doğrudan gitmez; her şey yerel backend üzerinden (TASARIM.md §8)
-      // REQLY_API_PROXY ile başka bir backend'e yönlendirilebilir (yan yana ikinci geliştirme/test örneği için)
-      '/api': process.env.REQLY_API_PROXY ?? 'http://127.0.0.1:7357',
+      // REQSTER_API_PROXY ile başka bir backend'e yönlendirilebilir (yan yana ikinci geliştirme/test örneği için)
+      '/api': process.env.REQSTER_API_PROXY ?? 'http://127.0.0.1:7357',
     },
   },
 });

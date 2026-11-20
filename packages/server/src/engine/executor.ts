@@ -7,7 +7,7 @@ import {
   type KeyValueItem,
   type ScriptLogEntry,
   type ScriptTestResult,
-} from '@reqly/shared';
+} from '@reqster/shared';
 import { request as undiciRequest } from 'undici';
 import { getFolderChainLeafToRoot, resolveEffectiveAuth } from '../core/hierarchy.js';
 import { buildResolver, collectSecretValues } from '../core/variables/resolve.js';
@@ -164,7 +164,7 @@ export async function executeRequest(input: ExecuteInput): Promise<ExecuteResult
       }
     } else if (body.mode === 'form-data') {
       // Faz 1: yalnızca metin alanları; dosya alanları desteklenmiyor
-      const boundary = `----reqly${Date.now().toString(16)}`;
+      const boundary = `----reqster${Date.now().toString(16)}`;
       const parts: string[] = [];
       for (const item of enabledItems(body.items ?? [])) {
         parts.push(

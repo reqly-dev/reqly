@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 /**
- * Paketlenmiş Reqly ikilisinin duman testi (CI'da Linux paketi üzerinde koşar; Windows paketi
+ * Paketlenmiş Reqster ikilisinin duman testi (CI'da Linux paketi üzerinde koşar; Windows paketi
  * aynı kodun yalnızca farklı bir Node ikilisiyle sarılmış hâlidir).
  *
- *   node launcher/smoke.mjs dist/package/linux-x64/Reqly/reqly
+ *   node launcher/smoke.mjs dist/package/linux-x64/Reqster/reqster
  *
  * Kanıtladığı şeyler: exe açılıyor, SEA içinden server.cjs yükleniyor, migration'lar koşuyor
  * (geçici boş veri dizini), frontend aynı porttan sunuluyor, bir istek yürütülüyor ve script
- * sandbox'ı paketlenmiş modda (REQLY_WORKER_MODE ile ikinci bir Reqly süreci) çalışıp
+ * sandbox'ı paketlenmiş modda (REQSTER_WORKER_MODE ile ikinci bir Reqster süreci) çalışıp
  * pre/post script log ve test sonuçlarını döndürüyor.
  *
- * İkinci bölüm Tauri sidecar sözleşmesini kabuk olmadan kanıtlar: `REQLY_PORT=0 REQLY_SIDECAR=1`
- * ile açılan süreç stdout'a `REQLY_READY http://127.0.0.1:<port>/` yazar, o porttan API cevap
+ * İkinci bölüm Tauri sidecar sözleşmesini kabuk olmadan kanıtlar: `REQSTER_PORT=0 REQSTER_SIDECAR=1`
+ * ile açılan süreç stdout'a `REQSTER_READY http://127.0.0.1:<port>/` yazar, o porttan API cevap
  * verir ve stdin kapanınca (kabuk öldü) süreç kendi kendine çıkar.
  *
  * Yerel kapı bekçisi: yabancı Host 421, token'sız 401, yabancı Origin'li POST 403,
- * `?reqly_token=` ile açılış çerez kurup token'sız adrese yönlendirir.
+ * `?reqster_token=` ile açılış çerez kurup token'sız adrese yönlendirir.
  */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
@@ -26,7 +26,7 @@ import path from 'node:path';
 const BASE = 'http://127.0.0.1:7357';
 // Bölüm 1 token'ı dışarıdan verir (kabuk gibi); bölüm 2'de başlatıcının kendi ürettiği READY adresinden okunur
 const TOKEN = 'smoke-' + Math.random().toString(16).slice(2);
-const AUTH = { 'x-reqly-token': TOKEN };
+const AUTH = { 'x-reqster-token': TOKEN };
 const exe = process.argv[2];
 if (!exe) {
   console.error('kullanım: node launcher/smoke.mjs <paketlenmiş ikili>');
@@ -34,18 +34,18 @@ if (!exe) {
 }
 
 // Tauri sidecar düzeni (src-tauri/binaries/<exe> + src-tauri/resources/): resources exe'nin yanında
-// değildir, kabuk onu REQLY_RESOURCES_DIR ile verir. Burada aynı şeyi yapıp launcher'ın bu
+// değildir, kabuk onu REQSTER_RESOURCES_DIR ile verir. Burada aynı şeyi yapıp launcher'ın bu
 // değişkeni saydığını da sınarız. Taşınabilir pakette (exe yanında resources/) dokunulmaz.
 const exeDir = path.dirname(path.resolve(exe));
-if (!process.env.REQLY_RESOURCES_DIR && !existsSync(path.join(exeDir, 'resources', 'server.cjs'))) {
+if (!process.env.REQSTER_RESOURCES_DIR && !existsSync(path.join(exeDir, 'resources', 'server.cjs'))) {
   const tauriResources = path.join(exeDir, '..', 'resources');
   if (existsSync(path.join(tauriResources, 'server.cjs'))) {
-    process.env.REQLY_RESOURCES_DIR = tauriResources;
-    console.log(`Tauri sidecar düzeni algılandı; REQLY_RESOURCES_DIR=${tauriResources}`);
+    process.env.REQSTER_RESOURCES_DIR = tauriResources;
+    console.log(`Tauri sidecar düzeni algılandı; REQSTER_RESOURCES_DIR=${tauriResources}`);
   }
 }
 
-const dataDir = mkdtempSync(path.join(tmpdir(), 'reqly-smoke-'));
+const dataDir = mkdtempSync(path.join(tmpdir(), 'reqster-smoke-'));
 const failures = [];
 function check(name, cond, detail = '') {
   console.log(`${cond ? 'OK  ' : 'FAIL'} ${name}${detail ? ` — ${detail}` : ''}`);
@@ -55,7 +55,7 @@ function check(name, cond, detail = '') {
 /** Süreci başlatır, stdout/stderr'i biriktirir, çıkışını izler */
 function launch(env, stdin) {
   const proc = spawn(exe, [], {
-    env: { ...process.env, REQLY_NO_BROWSER: '1', REQLY_DATA_DIR: dataDir, ...env },
+    env: { ...process.env, REQSTER_NO_BROWSER: '1', REQSTER_DATA_DIR: dataDir, ...env },
     stdio: [stdin, 'pipe', 'pipe'],
   });
   const state = { proc, output: '', exited: null };
@@ -119,7 +119,7 @@ async function execute(scripts) {
     body: JSON.stringify({
       method: 'GET',
       url: `${BASE}/api/workspace`,
-      headers: [{ key: 'X-Reqly-Token', value: TOKEN, enabled: true }],
+      headers: [{ key: 'X-Reqster-Token', value: TOKEN, enabled: true }],
       params: [],
       body: null,
       auth: null,
@@ -130,14 +130,14 @@ async function execute(scripts) {
 }
 
 // --- Bölüm 1: taşınabilir mod (sabit port 7357, tarayıcısız) ---------------------------------
-const main = launch({ REQLY_SESSION_TOKEN: TOKEN }, 'ignore');
+const main = launch({ REQSTER_SESSION_TOKEN: TOKEN }, 'ignore');
 try {
   const ws = await waitForServer(main, BASE, 30_000);
   check('sunucu hazır, workspace döndü', typeof ws?.workspace?.id === 'string');
   check(
     'READY satırı 7357 ile yazıldı',
-    main.output.includes(`REQLY_READY http://127.0.0.1:7357/?reqly_token=${TOKEN}\n`),
-    JSON.stringify(main.output.split('\n').filter((l) => l.startsWith('REQLY_READY'))),
+    main.output.includes(`REQSTER_READY http://127.0.0.1:7357/?reqster_token=${TOKEN}\n`),
+    JSON.stringify(main.output.split('\n').filter((l) => l.startsWith('REQSTER_READY'))),
   );
 
   // --- kapı bekçisi ---
@@ -145,10 +145,10 @@ try {
   check('token\'sız API isteği 401', anon.status === 401, `http ${anon.status}`);
   const anonHome = await fetch(`${BASE}/`);
   check('token\'sız sayfa 401', anonHome.status === 401, `http ${anonHome.status}`);
-  const wrong = await fetch(`${BASE}/api/workspace`, { headers: { 'x-reqly-token': TOKEN + 'x' } });
+  const wrong = await fetch(`${BASE}/api/workspace`, { headers: { 'x-reqster-token': TOKEN + 'x' } });
   check('yanlış token 401', wrong.status === 401, `http ${wrong.status}`);
   // fetch Host başlığını ezmeye izin vermez; ham HTTP ile DNS rebinding'i taklit et
-  const rebindStatus = await rawStatus(7357, 'GET /api/workspace HTTP/1.1\r\nHost: evil.example:7357\r\nX-Reqly-Token: ' + TOKEN + '\r\nConnection: close\r\n\r\n');
+  const rebindStatus = await rawStatus(7357, 'GET /api/workspace HTTP/1.1\r\nHost: evil.example:7357\r\nX-Reqster-Token: ' + TOKEN + '\r\nConnection: close\r\n\r\n');
   check('yabancı Host (DNS rebinding) 421', rebindStatus === 421, `http ${rebindStatus}`);
   const csrf = await fetch(`${BASE}/api/collections`, {
     method: 'POST',
@@ -156,11 +156,11 @@ try {
     body: JSON.stringify({ name: 'csrf' }),
   });
   check('yabancı Origin\'li POST 403', csrf.status === 403, `http ${csrf.status}`);
-  const boot = await fetch(`${BASE}/?reqly_token=${TOKEN}`, { redirect: 'manual' });
+  const boot = await fetch(`${BASE}/?reqster_token=${TOKEN}`, { redirect: 'manual' });
   const setCookie = boot.headers.get('set-cookie') ?? '';
   check(
-    '?reqly_token= çerez kurup / adresine yönlendirdi',
-    boot.status === 302 && boot.headers.get('location') === '/' && setCookie.startsWith('reqly_session_7357=') && /HttpOnly/i.test(setCookie),
+    '?reqster_token= çerez kurup / adresine yönlendirdi',
+    boot.status === 302 && boot.headers.get('location') === '/' && setCookie.startsWith('reqster_session_7357=') && /HttpOnly/i.test(setCookie),
     `http ${boot.status} location=${boot.headers.get('location')} cookie=${setCookie.split('=')[0]}`,
   );
   const cookie = setCookie.split(';')[0];
@@ -208,14 +208,14 @@ try {
 }
 
 // --- Bölüm 2: Tauri sidecar sözleşmesi (dinamik port, READY sinyali, stdin ile yaşam döngüsü) ---
-const sidecar = launch({ REQLY_PORT: '0', REQLY_SIDECAR: '1' }, 'pipe');
+const sidecar = launch({ REQSTER_PORT: '0', REQSTER_SIDECAR: '1' }, 'pipe');
 try {
   const readyUrl = await new Promise((resolve, reject) => {
-    const deadline = setTimeout(() => reject(new Error(`30 sn içinde REQLY_READY satırı gelmedi\n${sidecar.output}`)), 30_000);
+    const deadline = setTimeout(() => reject(new Error(`30 sn içinde REQSTER_READY satırı gelmedi\n${sidecar.output}`)), 30_000);
     let buffered = '';
     const onData = (d) => {
       buffered += d;
-      const m = buffered.match(/^REQLY_READY (\S+)\n/m);
+      const m = buffered.match(/^REQSTER_READY (\S+)\n/m);
       if (!m) return;
       clearTimeout(deadline);
       sidecar.proc.stdout.off('data', onData);
@@ -230,12 +230,12 @@ try {
   const port = Number(new URL(readyUrl).port);
   check('sidecar: READY satırı dinamik portla geldi', readyUrl.startsWith('http://127.0.0.1:') && port > 0 && port !== 7357, readyUrl.replace(/=.*/, '=…'));
 
-  const sidecarToken = new URL(readyUrl).searchParams.get('reqly_token');
+  const sidecarToken = new URL(readyUrl).searchParams.get('reqster_token');
   check('sidecar: başlatıcı oturum token\'ı üretti (READY adresinde)', typeof sidecarToken === 'string' && sidecarToken.length === 64, readyUrl.replace(/=.*/, '=…'));
   const base = new URL('/', readyUrl).href;
   const anonSidecar = await fetch(`${base}api/workspace`);
   check('sidecar: token\'sız 401', anonSidecar.status === 401, `http ${anonSidecar.status}`);
-  const res = await fetch(`${base}api/workspace`, { headers: { 'x-reqly-token': sidecarToken ?? '' } });
+  const res = await fetch(`${base}api/workspace`, { headers: { 'x-reqster-token': sidecarToken ?? '' } });
   const body = await res.json().catch(() => null);
   check('sidecar: READY portundan /api/workspace 200', res.status === 200 && typeof body?.workspace?.id === 'string', `http ${res.status}`);
 

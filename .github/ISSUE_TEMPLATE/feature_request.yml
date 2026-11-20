@@ -13,11 +13,11 @@ body:
     id: proposal
     attributes:
       label: Proposal / Öneri
-      description: How could Reqly help? Postman or other tools' behaviour is a useful reference.
+      description: How could Reqster help? Postman or other tools' behaviour is a useful reference.
   - type: checkboxes
     id: principles
     attributes:
       label: Principles / İlkeler
       options:
-        - label: This works without an account, cloud service or telemetry (Reqly is local-first).
+        - label: This works without an account, cloud service or telemetry (Reqster is local-first).
           required: true

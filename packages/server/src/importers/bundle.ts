@@ -1,4 +1,4 @@
-import type { ImportReport, ReqlyBundle } from '@reqly/shared';
+import { isBundleFormat, type ImportReport, type ReqsterBundle } from '@reqster/shared';
 import { getDb } from '../db/connection.js';
 import { msg } from '../i18n/context.js';
 import {
@@ -10,18 +10,18 @@ import {
 } from './postman-v2.js';
 
 /**
- * `.reqly.json` paylaşım paketi içe aktarımı. Paket, `exporters/postman-v2.ts`'nin ürettiği
+ * `.reqster.json` paylaşım paketi içe aktarımı. Paket, `exporters/postman-v2.ts`'nin ürettiği
  * Postman v2.1 koleksiyon/ortam belgelerini ve global `values[]`'ı taşır; her parça mevcut Postman
  * importer'ına verilir (ayrı bir eşleme yoktur). Bütün parçalar TEK transaction'dadır: iç importer'ların
  * kendi `db.transaction` çağrıları better-sqlite3'te savepoint'e dönüşür, herhangi bir parça hata verirse
  * hiçbir şey yazılmaz (TASARIM.md §6.1 atomiklik).
  */
 
-export function isReqlyBundle(json: unknown): json is ReqlyBundle {
+export function isReqsterBundle(json: unknown): json is ReqsterBundle {
   return (
     typeof json === 'object' &&
     json !== null &&
-    (json as { format?: unknown }).format === 'reqly-bundle'
+    isBundleFormat((json as { format?: unknown }).format)
   );
 }
 
@@ -32,7 +32,7 @@ interface SecretLike {
 }
 
 /** `type: "secret"` ve değeri boş gelen değişken adları (paket secret'sız üretildiyse kullanıcı uyarılır) */
-function emptySecretNames(bundle: ReqlyBundle): string[] {
+function emptySecretNames(bundle: ReqsterBundle): string[] {
   const names = new Set<string>();
   const collect = (list: unknown) => {
     if (!Array.isArray(list)) return;
@@ -47,9 +47,9 @@ function emptySecretNames(bundle: ReqlyBundle): string[] {
 }
 
 export function importBundle(json: unknown, workspaceId: string): ImportReport {
-  const bundle = json as ReqlyBundle;
+  const bundle = json as ReqsterBundle;
   if (
-    !isReqlyBundle(json) ||
+    !isReqsterBundle(json) ||
     bundle.version !== 1 ||
     !Array.isArray(bundle.collections) ||
     !Array.isArray(bundle.environments) ||

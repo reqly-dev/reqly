@@ -1,6 +1,6 @@
 # Üçüncü taraf bildirimleri / Third-party notices
 
-Reqly Apache-2.0 lisanslıdır (bkz. `LICENSE`, `NOTICE`). Dağıtılan paket aşağıdaki üçüncü taraf
+Reqster Apache-2.0 lisanslıdır (bkz. `LICENSE`, `NOTICE`). Dağıtılan paket aşağıdaki üçüncü taraf
 bileşenleri içerir; her biri kendi lisansıyla dağıtılır.
 
 Bu dosya `node launcher/third-party-notices.mjs --cargo` ile üretilir, elle düzenlenmez.

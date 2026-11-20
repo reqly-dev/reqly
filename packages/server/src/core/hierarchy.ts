@@ -1,4 +1,4 @@
-import type { AuthConfig, CollectionModel, FolderModel } from '@reqly/shared';
+import type { AuthConfig, CollectionModel, FolderModel } from '@reqster/shared';
 import { getFolder } from '../db/repositories/folders.js';
 
 /**

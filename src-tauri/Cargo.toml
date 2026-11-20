@@ -1,14 +1,14 @@
-# Reqly masaüstü kabuğu (Tauri 2). Node sunucusu `binaries/reqly-server-<triple>` sidecar'ı olarak
+# Reqster masaüstü kabuğu (Tauri 2). Node sunucusu `binaries/reqster-server-<triple>` sidecar'ı olarak
 # başlatılır; pencere sidecar'ın verdiği http://127.0.0.1:<port>/ adresini yükler.
 # Gerçek sürüm numarası tauri.conf.json üzerinden ../package.json'dan okunur; buradaki
 # değer yalnızca Cargo için yer tutucudur.
 [package]
-name = "reqly"
+name = "reqster"
 version = "0.0.0"
 description = "Tamamen yerel çalışan, hafif ve veri gizliliği odaklı API istemcisi"
 edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/reqly-dev/reqly"
+repository = "https://github.com/reqster-dev/reqster"
 homepage = "https://reqly.talhacigdem.tr"
 # tauri-plugin-updater 2.14 en az 1.90 ister.
 rust-version = "1.90"
@@ -16,7 +16,7 @@ publish = false
 
 [lib]
 # Tauri şablonundaki gibi: ana mantık kütüphanede, main.rs yalnızca giriş noktası.
-name = "reqly_lib"
+name = "reqster_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

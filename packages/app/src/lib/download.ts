@@ -7,16 +7,16 @@ export function isDesktopShell(): boolean {
 }
 
 /**
- * Masaüstünde indirme kabukta "Farklı kaydet" diyaloğuna döner; sonucu kabuk `reqly:file-saved` /
- * `reqly:file-save-failed` DOM olayıyla bildirir (`src-tauri/src/download.rs`, IPC yok). Bir kez kurulur.
+ * Masaüstünde indirme kabukta "Farklı kaydet" diyaloğuna döner; sonucu kabuk `reqster:file-saved` /
+ * `reqster:file-save-failed` DOM olayıyla bildirir (`src-tauri/src/download.rs`, IPC yok). Bir kez kurulur.
  */
 export function installDesktopDownloadNotices(): void {
   if (!isDesktopShell()) return;
   const pathOf = (e: Event) => (e as CustomEvent<{ path?: string }>).detail?.path ?? '';
-  window.addEventListener('reqly:file-saved', (e) =>
+  window.addEventListener('reqster:file-saved', (e) =>
     useAppStore.getState().showNotice(t('download.saved', { path: pathOf(e) })),
   );
-  window.addEventListener('reqly:file-save-failed', (e) =>
+  window.addEventListener('reqster:file-save-failed', (e) =>
     useAppStore.getState().showNotice(t('download.saveFailed', { path: pathOf(e) })),
   );
 }
@@ -32,8 +32,8 @@ export async function downloadFromApi(path: string, fallbackName: string, body?:
     method: body === undefined ? 'GET' : 'POST',
     headers:
       body === undefined
-        ? { 'X-Reqly-Lang': getLanguage() }
-        : { 'Content-Type': 'application/json', 'X-Reqly-Lang': getLanguage() },
+        ? { 'X-Reqster-Lang': getLanguage() }
+        : { 'Content-Type': 'application/json', 'X-Reqster-Lang': getLanguage() },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {

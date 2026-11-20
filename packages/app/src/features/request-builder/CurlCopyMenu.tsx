@@ -1,4 +1,4 @@
-import type { CurlExportResult, CurlShell } from '@reqly/shared';
+import type { CurlExportResult, CurlShell } from '@reqster/shared';
 import { Check, Terminal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../../api/client';

@@ -309,16 +309,16 @@ export interface PostmanApiImportResult extends ImportReport {
 /* ---------- Dışa aktarma / paylaşım paketi ---------- */
 
 /**
- * Reqly paylaşım paketi: tek dosyada birden çok koleksiyon (Postman v2.1 JSON), ortam (Postman environment
+ * Reqster paylaşım paketi: tek dosyada birden çok koleksiyon (Postman v2.1 JSON), ortam (Postman environment
  * JSON) ve global değişkenler. İçe aktarımda tek transaction'da atomik yüklenir. Secret değişkenler
  * `secretsIncluded=false` iken anahtarıyla ama boş değerle ve `type: "secret"` ile taşınır.
  */
-export interface ReqlyBundle {
-  format: 'reqly-bundle';
+export interface ReqsterBundle {
+  format: 'reqster-bundle';
   version: 1;
   /** ISO-8601 */
   exportedAt: string;
-  /** Üreten uygulama ve sürümü, ör. "reqly/1.0.0-rc.10" */
+  /** Üreten uygulama ve sürümü, ör. "reqster/1.0.0-rc.10" */
   app: string;
   secretsIncluded: boolean;
   /** Postman Collection v2.1 belgeleri (olduğu gibi) */

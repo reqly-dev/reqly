@@ -4,7 +4,7 @@ data/
 *.log
 .DS_Store
 # paket çıktıları (launcher/package.mjs); CI üretir
-/Reqly.exe
+/Reqster.exe
 launcher/sea-prep.blob
 # Tauri (src-tauri): derleme çıktısı ve package.mjs --sidecar-dir ürünleri
 src-tauri/target/

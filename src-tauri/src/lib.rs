@@ -1,7 +1,7 @@
-//! Reqly masaüstü kabuğu.
+//! Reqster masaüstü kabuğu.
 //!
-//! Kabuk, Node tabanlı sunucuyu (`binaries/reqly-server-<triple>`) Tauri sidecar'ı olarak başlatır,
-//! stdout'ta `REQLY_READY <url>` satırını bekler, ana pencereyi o adrese yönlendirir ve uygulama
+//! Kabuk, Node tabanlı sunucuyu (`binaries/reqster-server-<triple>`) Tauri sidecar'ı olarak başlatır,
+//! stdout'ta `REQSTER_READY <url>` satırını bekler, ana pencereyi o adrese yönlendirir ve uygulama
 //! kapanırken sidecar'ı öldürür. Frontend ile Tauri IPC üzerinden konuşulmaz; pencere yalnızca
 //! sidecar'ın sunduğu harici URL'yi yükler. Sözleşme: scratchpad `tauri-protokol.md` §1–3.
 
@@ -21,7 +21,7 @@ mod logging;
 mod update;
 
 /// Sidecar'ın hazır olduğunu bildiren stdout satırının öneki (sözleşme §2).
-const READY_PREFIX: &str = "REQLY_READY ";
+const READY_PREFIX: &str = "REQSTER_READY ";
 /// READY satırı bu süre içinde gelmezse başlatma başarısız sayılır.
 const READY_TIMEOUT: Duration = Duration::from_secs(30);
 /// Hata diyaloğunda gösterilecek son stderr satırı sayısı.
@@ -76,7 +76,7 @@ pub fn run() {
             // Kabuk logu: stderr + app_data_dir/logs/shell.log (Windows'ta tek teşhis kaynağı)
             match app.path().app_data_dir() {
                 Ok(dir) => logging::init(dir.join("logs"), app.package_info().version.to_string().as_str()),
-                Err(err) => crate::rlog!("[reqly] app_data_dir çözülemedi, dosya logu yok: {err}"),
+                Err(err) => crate::rlog!("[reqster] app_data_dir çözülemedi, dosya logu yok: {err}"),
             }
 
             // Ana pencere config'te `create: false`; indirme olayını yakalamak için (dışa aktarmada
@@ -96,8 +96,8 @@ pub fn run() {
             // Yalnızca debug derlemede: geliştirici `npm run dev` + `cargo run` ile çalışıyorsa
             // sidecar başlatmadan doğrudan verilen adrese git.
             #[cfg(debug_assertions)]
-            if let Ok(dev_url) = std::env::var("REQLY_DEV_URL") {
-                crate::rlog!("[reqly] REQLY_DEV_URL verildi, sidecar başlatılmıyor: {dev_url}");
+            if let Ok(dev_url) = std::env::var("REQSTER_DEV_URL") {
+                crate::rlog!("[reqster] REQSTER_DEV_URL verildi, sidecar başlatılmıyor: {dev_url}");
                 navigate_main(&handle, &dev_url)?;
                 return Ok(());
             }
@@ -114,7 +114,7 @@ pub fn run() {
             }
         })
         .build(tauri::generate_context!())
-        .expect("Reqly kabuğu oluşturulamadı")
+        .expect("Reqster kabuğu oluşturulamadı")
         .run(|app, event| {
             if matches!(event, RunEvent::ExitRequested { .. } | RunEvent::Exit) {
                 kill_sidecar(app);
@@ -130,19 +130,19 @@ fn start_sidecar(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
 
     let mut envs: HashMap<String, String> = HashMap::new();
     envs.insert(
-        "REQLY_RESOURCES_DIR".into(),
+        "REQSTER_RESOURCES_DIR".into(),
         resources_dir.to_string_lossy().into_owned(),
     );
-    envs.insert("REQLY_DATA_DIR".into(), data_dir.to_string_lossy().into_owned());
-    envs.insert("REQLY_PORT".into(), "0".into());
-    envs.insert("REQLY_SIDECAR".into(), "1".into());
+    envs.insert("REQSTER_DATA_DIR".into(), data_dir.to_string_lossy().into_owned());
+    envs.insert("REQSTER_PORT".into(), "0".into());
+    envs.insert("REQSTER_SIDECAR".into(), "1".into());
 
     // tauri-plugin-shell stdin'i her zaman pipe olarak açar; CommandChild yaşadığı sürece açık kalır.
     // Süreç grubu (POSIX) / job object (Windows): kill() sunucuyla birlikte onun açtığı script
     // worker'ını da öldürür, yetim kalmaz. kill_on_drop güvenlik ağıdır (state beklenmedik düşerse).
     let (rx, child) = app
         .shell()
-        .sidecar("reqly-server")?
+        .sidecar("reqster-server")?
         .envs(envs)
         .set_process_group(true)
         .kill_on_drop(true)
@@ -193,7 +193,7 @@ fn watch_sidecar(app: AppHandle, mut rx: tauri::async_runtime::Receiver<CommandE
                         // Adres oturum token'ını taşır: loga/diyaloğa yalnızca taban adres yazılır.
                         let (base, token) = update::split_ready_url(url).unwrap_or_else(|| (url.to_owned(), None));
                         crate::rlog!(
-                            "[reqly] sunucu hazır: {base} (oturum token'ı: {})",
+                            "[reqster] sunucu hazır: {base} (oturum token'ı: {})",
                             if token.is_some() { "var" } else { "yok" }
                         );
                         watch.ready.store(true, Ordering::SeqCst);
@@ -262,8 +262,8 @@ fn report_failure(app: &AppHandle, reason: &str, stderr_tail: &str) {
         return; // kabuk zaten kapanıyor ya da diyalog gösterildi (zaman aşımı + çökme çakışabilir)
     }
 
-    crate::rlog!("[reqly] HATA: {reason}");
-    let mut message = format!("Reqly sunucusu başlatılamadı.\n\n{reason}");
+    crate::rlog!("[reqster] HATA: {reason}");
+    let mut message = format!("Reqster sunucusu başlatılamadı.\n\n{reason}");
     if !stderr_tail.is_empty() {
         message.push_str("\n\nSunucu çıktısı (son satırlar):\n");
         message.push_str(stderr_tail);
@@ -272,7 +272,7 @@ fn report_failure(app: &AppHandle, reason: &str, stderr_tail: &str) {
     let exit_handle = app.clone();
     app.dialog()
         .message(message)
-        .title("Reqly")
+        .title("Reqster")
         .kind(MessageDialogKind::Error)
         .show(move |_| exit_handle.exit(1));
 }
@@ -286,7 +286,7 @@ pub(crate) fn kill_sidecar(app: &AppHandle) {
     let child = sidecar.child.lock().unwrap_or_else(|e| e.into_inner()).take();
     if let Some(child) = child {
         if let Err(err) = child.kill() {
-            crate::rlog!("[reqly] sidecar öldürülemedi: {err}");
+            crate::rlog!("[reqster] sidecar öldürülemedi: {err}");
         }
     }
 }

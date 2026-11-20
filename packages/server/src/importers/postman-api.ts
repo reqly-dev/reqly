@@ -5,7 +5,7 @@ import type {
   PostmanInventory,
   PostmanInventoryItem,
   PostmanInventoryWorkspace,
-} from '@reqly/shared';
+} from '@reqster/shared';
 import { type Dispatcher, request as undiciRequest } from 'undici';
 import { getSetting } from '../db/repositories/settings.js';
 import { createDispatcherFor, describeProxyError } from '../engine/dispatcher.js';
@@ -22,7 +22,7 @@ import {
  * Postman API'den (https://api.getpostman.com) toplu içe aktarma. Kullanıcının API anahtarı yalnızca
  * istek gövdesinde yaşar: saklanmaz, loglanmaz, hiçbir hata mesajına girmez (TASARIM.md §8).
  *
- * Yalnızca TEST amaçlı: `REQLY_POSTMAN_API_BASE` ile taban adres sahte bir sunucuya çevrilebilir
+ * Yalnızca TEST amaçlı: `REQSTER_POSTMAN_API_BASE` ile taban adres sahte bir sunucuya çevrilebilir
  * (uçtan uca senaryolar gerçek Postman API'ye çıkmaz). Üretimde tanımlanmaz, varsayılan gerçek adrestir.
  */
 const DEFAULT_API_BASE = 'https://api.getpostman.com';
@@ -85,7 +85,7 @@ class PostmanApiClient {
   private readonly release: () => void;
 
   constructor(private readonly apiKey: string) {
-    this.base = (process.env.REQLY_POSTMAN_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, '');
+    this.base = (process.env.REQSTER_POSTMAN_API_BASE || DEFAULT_API_BASE).replace(/\/+$/, '');
     this.timeoutMs = getSetting('network.timeout_ms');
     const resolved = createDispatcherFor(new URL(this.base), {
       timeoutMs: this.timeoutMs,
