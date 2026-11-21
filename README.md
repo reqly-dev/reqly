@@ -40,8 +40,8 @@ Download the latest release from the [download page](https://reqster.talhacigdem
 
 Data lives in a single SQLite file: `%APPDATA%\tr.talhacigdem.reqly\reqster.db` on Windows,
 `~/Library/Application Support/tr.talhacigdem.reqly/reqster.db` on macOS, `data/reqster.db` (or `REQSTER_DATA_DIR`)
-otherwise. The desktop app checks for updates once a day; this is its only outgoing call and can be turned off in
-Settings → Updates.
+otherwise. The desktop app checks for updates on startup and once a day; this is its only outgoing call, it only
+reads version information and sends no other data.
 
 ## Development
 

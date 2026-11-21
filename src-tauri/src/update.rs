@@ -1,12 +1,16 @@
 //! Uygulama içi güncelleme.
 //!
-//! Frontend Tauri IPC kullanmadığı için akışın tamamı burada, Rust tarafındadır: sidecar
-//! `REQSTER_READY` olduktan sonra ayrı bir async görev `update.auto_check` ayarına bakar, açıksa
-//! `plugins.updater.endpoints`'teki `latest.json`'u okur ve yeni sürüm varsa yerel bir diyalog
-//! gösterir ("Şimdi kur" / "Sonra"). "Sonra" denen sürüm bu oturumda bir daha sorulmaz; uygulama
-//! açık kaldığı sürece denetim günde bir sessizce yinelenir. Tam sessiz kurulum yoktur.
+//! Frontend Tauri IPC kullanmadığı için akışın tamamı burada, Rust tarafındadır. Sidecar `REQSTER_READY`
+//! olduktan sonra pencere hemen uygulamaya geçmez: açılış ekranında (`ui/index.html`) "Güncellemeler
+//! denetleniyor" yazılır ve `plugins.updater.endpoints`'teki `latest.json` en fazla
+//! [`STARTUP_CHECK_BUDGET`] kadar beklenir. Güncelleme varsa diyalog açılış ekranındayken sorulur ve
+//! seçim yapılmadan uygulama açılmaz: "Şimdi kur" / "Sonra". Kurulu sürüm manifestteki `minimumVersion`'ın
+//! altındaysa güncelleme **zorunludur**: diyalog yalnızca "Şimdi kur" / "Çık" sunar. Süre dolarsa (ağ yok,
+//! proxy yavaş) uygulama açılır, denetim arka planda biter ve bulursa normal diyalogla sorar. Uygulama açık
+//! kaldığı sürece denetim günde bir yinelenir; o turlarda bulunan zorunlu güncelleme de yalnızca sorulur,
+//! zorunluluk bir sonraki açılışta uygulanır (çalışan oturum bozulmasın). Denetim kapatılamaz.
 //!
-//! Hiçbir hata uygulamayı etkilemez: tümü stderr'e düşer, açılış asla beklemez.
+//! Hiçbir denetim hatası uygulamayı engellemez: loga düşer ve uygulama açılır.
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -18,8 +22,8 @@ use tauri_plugin_updater::{Update, UpdaterExt};
 
 use crate::{kill_sidecar, rlog, Sidecar, MAIN_WINDOW};
 
-/// İlk denetim READY'den bu kadar sonra yapılır; pencere önce arayüzü yüklesin.
-const FIRST_CHECK_DELAY: Duration = Duration::from_secs(5);
+/// Açılış ekranında güncelleme denetimine tanınan süre; dolunca uygulama açılır, denetim arka planda biter.
+const STARTUP_CHECK_BUDGET: Duration = Duration::from_secs(5);
 /// Uygulama açık kaldığı sürece denetim bu aralıkla yinelenir.
 const RECHECK_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
 /// Sidecar'a yerel HTTP istekleri için zaman aşımı.
@@ -30,34 +34,27 @@ const UPDATER_TIMEOUT: Duration = Duration::from_secs(10 * 60);
 const NOTES_MAX_CHARS: usize = 300;
 const WINDOW_TITLE: &str = "Reqster";
 
-/// Sidecar'daki ayarların denetimi ilgilendiren kısmı (`GET /api/settings`, düz anahtarlar).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct CheckSettings {
-    auto_check: bool,
-    verify_tls: bool,
+/// `network.verify_tls` ayarı (`GET /api/settings`, düz anahtarlar); eksik/bozuksa doğrulama açık.
+fn verify_tls_from_settings(value: &serde_json::Value) -> bool {
+    value["network.verify_tls"].as_bool().unwrap_or(true)
 }
 
-impl Default for CheckSettings {
-    fn default() -> Self {
-        Self {
-            auto_check: true,
-            verify_tls: true,
-        }
+/// Manifestin (`latest.json`) üst düzeyindeki `minimumVersion`: kurulu sürüm bunun altındaysa güncelleme
+/// zorunludur. Alan yoksa ya da sürümler semver değilse zorunlu değildir.
+fn is_required(current_version: &str, manifest: &serde_json::Value) -> bool {
+    let Some(minimum) = manifest["minimumVersion"].as_str() else { return false };
+    match (semver::Version::parse(current_version), semver::Version::parse(minimum)) {
+        (Ok(current), Ok(minimum)) => current < minimum,
+        _ => false,
     }
 }
 
-impl CheckSettings {
-    /// Eksik/bozuk alanlarda varsayılan (denetim açık, TLS doğrulaması açık) kullanılır.
-    fn from_json(value: &serde_json::Value) -> Self {
-        let default = Self::default();
-        Self {
-            auto_check: value["update.auto_check"]
-                .as_bool()
-                .unwrap_or(default.auto_check),
-            verify_tls: value["network.verify_tls"]
-                .as_bool()
-                .unwrap_or(default.verify_tls),
-        }
+/// Açılış ekranındaki durum satırını değiştirir (`ui/index.html` → `window.__reqsterStatus`). Pencere uygulamaya
+/// geçtiyse işlev tanımsızdır ve çağrı hiçbir şey yapmaz.
+fn splash_status(app: &AppHandle, text: &str) {
+    if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
+        let arg = serde_json::to_string(text).unwrap_or_else(|_| "\"\"".into());
+        let _ = window.eval(format!("window.__reqsterStatus && window.__reqsterStatus({arg})"));
     }
 }
 
@@ -75,8 +72,14 @@ pub(crate) fn split_ready_url(ready: &str) -> Option<(String, Option<String>)> {
     Some((base.to_string(), token))
 }
 
-/// READY sonrası çağrılır: ilk denetimi kısa bir gecikmeyle, sonrakileri günde bir koşan görevi başlatır.
-pub(crate) fn schedule_checks(app: AppHandle, server_url: String, token: Option<String>) {
+/// READY sonrası çağrılır. Açılış denetimini yapar, sonra `open_app` ile pencereyi uygulamaya geçirir (tam bir kez)
+/// ve günlük denetimleri sürdürür. Zorunlu güncelleme reddedilirse uygulama kapanır, `open_app` çağrılmaz.
+pub(crate) fn startup(
+    app: AppHandle,
+    server_url: String,
+    token: Option<String>,
+    open_app: Box<dyn FnOnce() + Send + 'static>,
+) {
     // reqwest bu projede `rustls-no-provider` ile derlenir (updater eklentisinin seçimi) ve eklenti kripto
     // sağlayıcıyı ancak kendi `check()` çağrısında kurar. Bizim yerel HTTP istemcimiz ondan önce kurulduğu
     // için rustls "no CryptoProvider" paniği atıyor, `panic = "abort"` süreci sessizce öldürüyordu
@@ -87,18 +90,70 @@ pub(crate) fn schedule_checks(app: AppHandle, server_url: String, token: Option<
     tauri::async_runtime::spawn(async move {
         // "Sonra" denen sürüm; aynı sürüm için bu oturumda tekrar sorulmaz.
         let mut declined: Option<String> = None;
-        rlog!("[reqster] güncelleme: görev başladı, {} sn sonra ilk denetim", FIRST_CHECK_DELAY.as_secs());
-        tokio::time::sleep(FIRST_CHECK_DELAY).await;
+
+        rlog!("[reqster] güncelleme: açılış denetimi (en fazla {} sn)", STARTUP_CHECK_BUDGET.as_secs());
+        splash_status(&app, "Güncellemeler denetleniyor");
+        let mut pending = {
+            let (app, server_url, token) = (app.clone(), server_url.clone(), token.clone());
+            tauri::async_runtime::spawn(async move { find_update(&app, &server_url, token.as_deref()).await })
+        };
+        match tokio::time::timeout(STARTUP_CHECK_BUDGET, &mut pending).await {
+            Ok(found) => {
+                if let Some(update) = found.ok().flatten() {
+                    if is_required(&update.current_version, &update.raw_json) {
+                        rlog!("[reqster] güncelleme: {} zorunlu (minimumVersion)", update.version);
+                        if !ask_required(&app, &update).await {
+                            rlog!("[reqster] güncelleme: zorunlu güncelleme reddedildi, uygulama kapanıyor");
+                            app.exit(0);
+                            return;
+                        }
+                        install(&app, update).await;
+                        // buraya ancak kurulum başarısızsa gelinir: kullanıcı kilitli kalmasın, uygulama açılır
+                    } else if ask_install(&app, &update, false).await {
+                        install(&app, update).await;
+                    } else {
+                        declined = Some(update.version.clone());
+                    }
+                }
+                open_app();
+            }
+            Err(_) => {
+                rlog!("[reqster] güncelleme: açılış süresi doldu, uygulama açılıyor; denetim arka planda sürüyor");
+                open_app();
+                if let Some(update) = pending.await.ok().flatten() {
+                    offer(&app, update, &mut declined).await;
+                }
+            }
+        }
+
         loop {
-            rlog!("[reqster] güncelleme: denetim başlıyor");
-            run_check(&app, &server_url, token.as_deref(), &mut declined).await;
             tokio::time::sleep(RECHECK_INTERVAL).await;
+            if let Some(update) = find_update(&app, &server_url, token.as_deref()).await {
+                offer(&app, update, &mut declined).await;
+            }
         }
     });
 }
 
-/// Tek bir denetim turu. Dönüş değeri yok: her sonuç ya sessizdir ya da diyalogla bildirilir.
-async fn run_check(app: &AppHandle, server_url: &str, token: Option<&str>, declined: &mut Option<String>) {
+/// Uygulama açıkken bulunan güncellemeyi sorar. Zorunlu olsa da çalışan oturum kilitlenmez; zorunluluk bir sonraki
+/// açılışta açılış ekranında uygulanır.
+async fn offer(app: &AppHandle, update: Update, declined: &mut Option<String>) {
+    if !should_prompt(declined.as_deref(), &update.version) {
+        rlog!("[reqster] güncelleme: {} bu oturumda ertelendi, tekrar sorulmuyor", update.version);
+        return;
+    }
+    let required = is_required(&update.current_version, &update.raw_json);
+    if ask_install(app, &update, required).await {
+        install(app, update).await;
+    } else {
+        *declined = Some(update.version.clone());
+    }
+}
+
+/// Tek bir denetim: yerel ayarları ve aktif proxy'yi sidecar'dan okur, manifesti denetler. Her hata loglanır,
+/// `None` döner.
+async fn find_update(app: &AppHandle, server_url: &str, token: Option<&str>) -> Option<Update> {
+    rlog!("[reqster] güncelleme: denetim başlıyor");
     let local = match reqwest::Client::builder()
         .no_proxy() // 127.0.0.1 isteği ortamdaki/sistemdeki proxy'ye asla gitmesin
         .timeout(LOCAL_HTTP_TIMEOUT)
@@ -107,24 +162,20 @@ async fn run_check(app: &AppHandle, server_url: &str, token: Option<&str>, decli
         Ok(client) => client,
         Err(err) => {
             rlog!("[reqster] güncelleme: yerel HTTP istemcisi kurulamadı: {err}");
-            return;
+            return None;
         }
     };
 
-    let settings = match get_json(&local, &format!("{server_url}api/settings"), token).await {
+    let verify_tls = match get_json(&local, &format!("{server_url}api/settings"), token).await {
         Ok(value) => {
             rlog!("[reqster] güncelleme: ayarlar okundu");
-            CheckSettings::from_json(&value)
+            verify_tls_from_settings(&value)
         }
         Err(err) => {
             rlog!("[reqster] güncelleme: ayarlar okunamadı ({err}), varsayılanla devam");
-            CheckSettings::default()
+            true
         }
     };
-    if !settings.auto_check {
-        rlog!("[reqster] güncelleme: otomatik denetim kapalı, atlanıyor");
-        return;
-    }
 
     // Aktif proxy (kimlik bilgisi dahil); uç yoksa / hata verirse proxy'siz devam.
     let proxy = match get_json(&local, &format!("{server_url}api/internal/proxy-url"), token).await {
@@ -144,34 +195,22 @@ async fn run_check(app: &AppHandle, server_url: &str, token: Option<&str>, decli
     };
 
     rlog!("[reqster] güncelleme: manifest denetleniyor (proxy: {})", if proxy.is_some() { "var" } else { "yok" });
-    let update = match check(app, proxy, settings.verify_tls).await {
-        Ok(Some(update)) => update,
+    match check(app, proxy, verify_tls).await {
+        Ok(Some(update)) => {
+            rlog!(
+                "[reqster] güncelleme: {} → {} bulundu ({})",
+                update.current_version, update.version, update.download_url
+            );
+            Some(update)
+        }
         Ok(None) => {
             rlog!("[reqster] güncelleme: yeni sürüm yok");
-            return;
+            None
         }
         Err(err) => {
             rlog!("[reqster] güncelleme: denetim başarısız: {err}");
-            return;
+            None
         }
-    };
-
-    if !should_prompt(declined.as_deref(), &update.version) {
-        rlog!(
-            "[reqster] güncelleme: {} bu oturumda ertelendi, tekrar sorulmuyor",
-            update.version
-        );
-        return;
-    }
-
-    rlog!(
-        "[reqster] güncelleme: {} → {} bulundu ({})",
-        update.current_version, update.version, update.download_url
-    );
-    if ask_install(app, &update).await {
-        install(app, update).await;
-    } else {
-        *declined = Some(update.version.clone());
     }
 }
 
@@ -225,15 +264,16 @@ fn should_prompt(declined: Option<&str>, version: &str) -> bool {
     declined != Some(version)
 }
 
-/// İki düğmeli yerel diyalog. `true` = "Şimdi kur".
-async fn ask_install(app: &AppHandle, update: &Update) -> bool {
+/// İki düğmeli yerel diyalog. `true` = "Şimdi kur". `required` ise (uygulama açıkken bulunan zorunlu güncelleme)
+/// mesaj bir sonraki açılışta kurulmasının zorunlu olacağını söyler.
+async fn ask_install(app: &AppHandle, update: &Update, required: bool) -> bool {
+    let mut message = update_message(&update.version, &update.current_version, update.body.as_deref());
+    if required {
+        message.push_str("\n\nBu güncelleme zorunludur: şimdi kurmazsanız Reqster bir sonraki açılışta kurulmadan açılmaz.");
+    }
     let dialog = app
         .dialog()
-        .message(update_message(
-            &update.version,
-            &update.current_version,
-            update.body.as_deref(),
-        ))
+        .message(message)
         .title("Reqster güncellemesi")
         .kind(MessageDialogKind::Info)
         .buttons(MessageDialogButtons::OkCancelCustom(
@@ -242,6 +282,21 @@ async fn ask_install(app: &AppHandle, update: &Update) -> bool {
         ));
     // blocking_show ana iş parçacığında çağrılamaz; async görevdeyiz ama tokio işçisini de
     // kilitlemeyelim.
+    tauri::async_runtime::spawn_blocking(move || dialog.blocking_show())
+        .await
+        .unwrap_or(false)
+}
+
+/// Zorunlu güncelleme diyaloğu (açılış ekranında). `true` = "Şimdi kur", `false` = "Çık" (pencere kapatma dahil).
+async fn ask_required(app: &AppHandle, update: &Update) -> bool {
+    let mut message = update_message(&update.version, &update.current_version, update.body.as_deref());
+    message.push_str("\n\nBu güncelleme zorunludur; kurulmadan Reqster kullanılamaz.");
+    let dialog = app
+        .dialog()
+        .message(message)
+        .title("Reqster güncellemesi (zorunlu)")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancelCustom("Şimdi kur".into(), "Çık".into()));
     tauri::async_runtime::spawn_blocking(move || dialog.blocking_show())
         .await
         .unwrap_or(false)
@@ -281,9 +336,11 @@ async fn install(app: &AppHandle, update: Update) {
     };
 
     set_title("Reqster — güncelleme indiriliyor");
+    splash_status(app, "Güncelleme indiriliyor");
     let downloaded = Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let last_percent = Arc::new(std::sync::atomic::AtomicU64::new(u64::MAX));
     let progress_window = window.clone();
+    let install_window = window.clone();
     let result = update
         .download_and_install(
             move |chunk, total| {
@@ -294,11 +351,19 @@ async fn install(app: &AppHandle, update: Update) {
                         if let Some(window) = &progress_window {
                             let _ = window
                                 .set_title(&format!("Reqster — güncelleme indiriliyor %{percent}"));
+                            let _ = window.eval(format!(
+                                "window.__reqsterStatus && window.__reqsterStatus('Güncelleme indiriliyor %{percent}')"
+                            ));
                         }
                     }
                 }
             },
-            || rlog!("[reqster] güncelleme: indirme tamamlandı, imza doğrulandı, kuruluyor"),
+            || {
+                rlog!("[reqster] güncelleme: indirme tamamlandı, imza doğrulandı, kuruluyor");
+                if let Some(window) = &install_window {
+                    let _ = window.eval("window.__reqsterStatus && window.__reqsterStatus('Güncelleme kuruluyor')");
+                }
+            },
         )
         .await;
 
@@ -353,19 +418,23 @@ mod tests {
     }
 
     #[test]
-    fn ayarlar_eksikse_varsayilan_acik() {
-        let value: serde_json::Value = serde_json::from_str("{}").unwrap();
-        assert_eq!(CheckSettings::from_json(&value), CheckSettings::default());
-        let value: serde_json::Value =
-            serde_json::from_str(r#"{"update.auto_check": false, "network.verify_tls": false}"#)
-                .unwrap();
-        assert_eq!(
-            CheckSettings::from_json(&value),
-            CheckSettings {
-                auto_check: false,
-                verify_tls: false
-            }
-        );
+    fn tls_ayari_eksikse_dogrulama_acik() {
+        assert!(verify_tls_from_settings(&serde_json::json!({})));
+        assert!(!verify_tls_from_settings(&serde_json::json!({ "network.verify_tls": false })));
+        // eski sürümlerden kalan update.auto_check artık denetimi kapatmaz (yok sayılır)
+        assert!(verify_tls_from_settings(&serde_json::json!({ "update.auto_check": false })));
+    }
+
+    #[test]
+    fn asgari_surumun_altindaki_kurulum_zorunlu_gunceller() {
+        let manifest = serde_json::json!({ "version": "1.0.0-rc.30", "minimumVersion": "1.0.0-rc.25" });
+        assert!(is_required("1.0.0-rc.24", &manifest));
+        assert!(is_required("1.0.0-rc.9", &manifest)); // sayısal karşılaştırma, sözlüksel değil
+        assert!(!is_required("1.0.0-rc.25", &manifest)); // asgari sürümün kendisi zorunlu değil
+        assert!(!is_required("1.0.0-rc.26", &manifest));
+        assert!(!is_required("1.0.0-rc.24", &serde_json::json!({ "version": "1.0.0-rc.30" })));
+        assert!(!is_required("1.0.0-rc.24", &serde_json::json!({ "minimumVersion": "bozuk" })));
+        assert!(!is_required("1.0.0-rc.24", &serde_json::json!({ "minimumVersion": 25 })));
     }
 
     #[test]

@@ -39,8 +39,8 @@ Son sürümü [indirme sayfasından](https://reqster.talhacigdem.tr/download/lat
 
 Veri tek bir SQLite dosyasındadır: Windows'ta `%APPDATA%\tr.talhacigdem.reqly\reqster.db`, macOS'ta
 `~/Library/Application Support/tr.talhacigdem.reqly/reqster.db`, diğer durumlarda `data/reqster.db` (ya da
-`REQSTER_DATA_DIR`). Masaüstü uygulaması günde bir kez güncelleme denetler; tek dış çağrısı budur ve Ayarlar →
-Güncellemeler'den kapatılabilir.
+`REQSTER_DATA_DIR`). Masaüstü uygulaması açılışta ve günde bir kez güncelleme denetler; tek dış çağrısı budur, yalnızca sürüm
+bilgisi okunur ve başka veri gönderilmez.
 
 ## Geliştirme
 

@@ -203,16 +203,21 @@ fn watch_sidecar(app: AppHandle, mut rx: tauri::async_runtime::Receiver<CommandE
                             if token.is_some() { "var" } else { "yok" }
                         );
                         watch.ready.store(true, Ordering::SeqCst);
-                        if let Err(err) = navigate_main(&app, url) {
-                            report_failure(
-                                &app,
-                                &format!("Pencere sunucu adresine yönlendirilemedi ({base}): {err}"),
-                                &watch.stderr_text(),
-                            );
-                            break;
-                        }
-                        // Güncelleme denetimi ayrı görevde; açılışı asla bekletmez (bkz. update.rs).
-                        update::schedule_checks(app.clone(), base, token);
+                        // Pencere açılış ekranında kalır: önce güncelleme denetlenir (en fazla birkaç sn), sonra
+                        // `open_app` uygulamaya geçirir (bkz. update.rs). Zorunlu güncelleme reddedilirse hiç geçmez.
+                        let open_app = {
+                            let (app, watch, url, base) = (app.clone(), Arc::clone(&watch), url.to_owned(), base.clone());
+                            Box::new(move || {
+                                if let Err(err) = navigate_main(&app, &url) {
+                                    report_failure(
+                                        &app,
+                                        &format!("Pencere sunucu adresine yönlendirilemedi ({base}): {err}"),
+                                        &watch.stderr_text(),
+                                    );
+                                }
+                            })
+                        };
+                        update::startup(app.clone(), base, token, open_app);
                     } else if !line.is_empty() {
                         crate::rlog!("[sidecar] {line}");
                     }

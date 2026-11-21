@@ -701,8 +701,11 @@ iç transaction'lar savepoint). Paket biçimi dışa dönük sözleşmedir; alan
    `tlsVerified=false` taşır; UI bunu uyarı olarak gösterir. Bu bir geçici çözümdür: araya giren
    saldırgan fark edilmez. Kalıcı çözüm, kurum kök sertifikasını `NODE_EXTRA_CA_CERTS` ortam
    değişkeniyle Node'a tanıtıp doğrulamayı açık tutmaktır. History şeması bu bayrağı saklamaz.
-10. **Güncelleme denetimi** uygulamanın tek dış çağrısıdır ve `update.auto_check` ayarıyla kapatılabilir;
-    yalnızca masaüstü kabuğu yapar, sürüm bilgisi dışında veri göndermez, kurmadan önce sorar. Kabuk
+10. **Güncelleme denetimi** uygulamanın tek dış çağrısıdır; yalnızca masaüstü kabuğu yapar, sürüm bilgisi dışında
+    veri göndermez, kurmadan önce sorar. **Kapatılamaz** (rc.24): `update.auto_check` ayarı kaldırıldı, çünkü
+    kullanıcıların güncelleme alabilmesi ve zorunlu güncellemenin (manifestte `minimumVersion`) uygulanabilmesi
+    tercihe bırakılmadı (bakımcı kararı, 2026-11-21). Denetim açılış ekranında en fazla 5 sn bekletir; ağ yoksa
+    uygulama açılır (yerel çalışma asla engellenmez, zorunluluk ancak sunucuya ulaşılınca uygulanır). Kabuk
     DB'ye erişmediği için aktif proxy'nin kimlik bilgisi dahil URL'ini `GET /api/internal/proxy-url`
     ucundan alır (yalnızca kabuk içindir; kullanıcıya açık proxy API'si parolayı asla döndürmez).
 11. **Dil (tr/en)**: UI her isteğe `X-Reqster-Lang` yazar; sunucu kullanıcıya görünen tüm metinleri (`{error}`, zod ayrıntıları,

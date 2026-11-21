@@ -241,6 +241,14 @@ jobs:
           System Settings → Privacy & Security → Open Anyway on first launch. \`*.sig\` and \`*.app.tar.gz\` files are
           used by the in-app updater.
           EOF
+          # Mandatory update (deploy/surum.sh --zorunlu writes this trailer into the version commit): the marker
+          # below makes the download site put this version as `minimumVersion` into the updater manifest, so
+          # older desktop installs must update before they open. Adding the marker to an existing Release later
+          # has the same effect once the site republishes.
+          if gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA" --jq .commit.message | grep -qx 'Zorunlu-Guncelleme: evet'; then
+            printf '\n**Mandatory update:** desktop installs older than %s must install it before the app opens.\n\n<!-- reqster:minimum-version -->\n' "$V" >> notes.md
+            echo "mandatory update: marker added to the release notes"
+          fi
           pre=(); [[ "$V" == *-* ]] && pre=(--prerelease)
           if gh release view "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" dist/* --clobber -R "$GITHUB_REPOSITORY"
