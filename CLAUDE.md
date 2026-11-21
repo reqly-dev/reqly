@@ -119,7 +119,7 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
 - **Docker / public site**: `deploy/Dockerfile` Linux paketini headless imaja koyar (container'da
   `REQSTER_HOST=0.0.0.0`, `REQSTER_AUTH=off`, veri `/data`; önüne kimlik doğrulayan bir kapı gerekir, README). İndirme ve
   updater sitesi (`reqster.talhacigdem.tr`; eski `reqly.talhacigdem.tr` aynı içeriği sunar) bu depoda değildir; GitHub Release'lerinden beslenir. Bakımcı notları
-  (yerelde varsa): @../reqly-site/CLAUDE.md
+  (yerelde varsa): @../reqster-site/CLAUDE.md
 - Test altyapısı henüz yok. Doğrulama şu ana kadar `typecheck` + çalışan servera karşı curl ile
   uçtan uca API smoke testiyle yapılıyor (koleksiyon oluştur → değişken tanımla → execute → history kontrolü).
 - Veri `data/reqster.db` dosyasında (gitignore'da); `REQSTER_DATA_DIR` ile taşınabilir.
