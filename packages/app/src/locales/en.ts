@@ -57,10 +57,9 @@ export const en: Record<MessageKey, string> = {
   'settings.maxRedirects': 'Max redirects',
   'settings.updates': 'Updates',
   'settings.updates.installed': 'Installed version: {version}',
-  'settings.updates.autoCheck': 'Check for new versions on startup',
-  'settings.updates.hintBefore': 'Applies to the desktop app. Only version information is read from ',
+  'settings.updates.hintBefore': 'The desktop app checks for a new version on startup and once a day. Only version information is read from ',
   'settings.updates.hintAfter':
-    '; no other data is sent. If a new version exists the app asks first and never installs on its own.',
+    '; no other data is sent. If a new version exists the app asks first; a mandatory update must be installed before the app opens.',
 
   'env.none': 'No environment',
   'env.active': 'Active environment',

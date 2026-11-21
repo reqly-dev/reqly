@@ -54,11 +54,19 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   süreci sessizce öldürür (rc.9 Windows). Linux'ta kabuk `xvfb-run` ile koşturulup `shell.log` okunarak yeniden üretildi.
   Sidecar adı `reqster-server` (Tauri, crate adı `reqster` ile aynı sidecar adını reddeder); script worker
   `windowsHide: true` ile açılır ki GUI'den gizli başlatılan konsol süreci yeni pencere açmasın.
-  **Uygulama içi güncelleme** (`src-tauri/src/update.rs`, `tauri-plugin-updater`): READY'den 5 sn
-  sonra ayrı görev `GET /api/settings` → `update.auto_check` (yoksa açık) ve `GET /api/internal/proxy-url`
-  (aktif proxy, yoksa doğrudan) okur, `https://reqster.talhacigdem.tr/updates/latest.json`'u (erişilemezse eski `reqly.talhacigdem.tr`'yi; Tauri endpoint'leri sırayla dener) denetler; yeni
-  sürümde yerel diyalog "Şimdi kur / Sonra" ("Sonra" aynı sürüm için oturum boyunca susturur, denetim
-  24 saatte bir yinelenir). Windows'ta NSIS `/P /UPDATE /R` (passive) ile kurulur ve uygulama kendini
+  **Uygulama içi güncelleme** (`src-tauri/src/update.rs`, `tauri-plugin-updater`): READY'de pencere hemen
+  uygulamaya geçmez; açılış ekranı (`src-tauri/ui/index.html`, durum satırı `window.__reqsterStatus`, kabuk `webview.eval`
+  ile yazar) "Güncellemeler denetleniyor" gösterirken görev `GET /api/settings` (`network.verify_tls`) ve
+  `GET /api/internal/proxy-url` (aktif proxy, yoksa doğrudan) okur, `https://reqster.talhacigdem.tr/updates/latest.json`'u
+  (erişilemezse eski `reqly.talhacigdem.tr`'yi; Tauri endpoint'leri sırayla dener) denetler. En fazla
+  `STARTUP_CHECK_BUDGET` (5 sn) beklenir; dolunca uygulama açılır, denetim arka planda biter. Yeni sürümde diyalog açılış
+  ekranındayken "Şimdi kur / Sonra"; seçilmeden uygulama açılmaz. **Zorunlu güncelleme:** manifestin üst düzeyindeki
+  `minimumVersion`'ın altındaki kurulumda diyalog "Şimdi kur / Çık" (Çık → uygulama kapanır; kurulum başarısızsa
+  kilitlemez, açılır). Manifeste `minimumVersion`'ı site yayını yazar (`npm run release rc --zorunlu` → sürüm commit'inde
+  `Zorunlu-Guncelleme: evet` → `release.yml` Release notuna `<!-- reqster:minimum-version -->` → işaretli en yüksek sürüm).
+  Açıkken 24 saatte bir denetlenir; o turda bulunan zorunlu güncelleme yalnızca sorulur, zorunluluk sonraki açılışta
+  uygulanır ("Sonra" aynı sürümü oturum boyunca susturur). Denetim kapatılamaz (`update.auto_check` rc.24'te kaldırıldı;
+  eski DB değeri yok sayılır). Windows'ta NSIS `/S /UPDATE /R` (`installMode: quiet`, kurulum penceresi yok; rc.24'ten önce passive ilerleme penceresi açılıyordu, mod kurulu sürümün config'inden okunduğu için ilk sessiz güncelleme rc.24 → sonrası) ile kurulur ve uygulama kendini
   yeniden açar; sidecar `on_before_exit`'te öldürülür (kilitli `reqster-server.exe`); macOS'ta `.app`
   değiştirilip `app.restart()`. `network.verify_tls=false` ise updater da sertifika doğrulamaz (paketi
   minisign imzası korur). Yükleyici türü URL uzantısından değil içerikten (PE/MSI sihirli baytı) anlaşılır;
@@ -111,7 +119,7 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
 - **Docker / public site**: `deploy/Dockerfile` Linux paketini headless imaja koyar (container'da
   `REQSTER_HOST=0.0.0.0`, `REQSTER_AUTH=off`, veri `/data`; önüne kimlik doğrulayan bir kapı gerekir, README). İndirme ve
   updater sitesi (`reqster.talhacigdem.tr`; eski `reqly.talhacigdem.tr` aynı içeriği sunar) bu depoda değildir; GitHub Release'lerinden beslenir. Bakımcı notları
-  (yerelde varsa): @../reqly-site/CLAUDE.md
+  (yerelde varsa): @../reqster-site/CLAUDE.md
 - Test altyapısı henüz yok. Doğrulama şu ana kadar `typecheck` + çalışan servera karşı curl ile
   uçtan uca API smoke testiyle yapılıyor (koleksiyon oluştur → değişken tanımla → execute → history kontrolü).
 - Veri `data/reqster.db` dosyasında (gitignore'da); `REQSTER_DATA_DIR` ile taşınabilir.
@@ -346,8 +354,8 @@ Tamamlananlar — Faz 1 + arayüz geliştirmeleri + Faz 2'nin script sandbox çe
   `network.verify_tls=false` iken executor undici `Agent`'ı `connect.rejectUnauthorized=false` ile
   açar ve `ExecuteResult.tlsVerified=false` döner (ResponseViewer'da "TLS doğrulaması kapalı" uyarısı;
   `features/settings/SettingsMenu.tsx`). Kalıcı çözüm `NODE_EXTRA_CA_CERTS` ile kurum CA'sını tanıtmaktır.
-  `update.auto_check` (boolean, varsayılan `true`; Ayarlar > Güncellemeler) masaüstü kabuğunun açılıştaki
-  sürüm denetimini kapatır — uygulamanın tek dış çağrısı, tarayıcıdan kullanımda etkisiz.
+  Ayarlar > Güncellemeler yalnızca yüklü sürümü ve denetimin ne okuduğunu gösterir (denetim kapatılamaz, bkz. "Uygulama içi
+  güncelleme").
   Kabuğa özel `GET /api/internal/proxy-url` (`api/internal.routes.ts`, `core/proxyUrl.ts`) aktif proxy'yi
   kimlik bilgisi dahil `{ url: "http://u:p@host:port" }` (yoksa `{ url: null }`) olarak döner ki updater
   kurum proxy'sinden geçebilsin; kullanıcıya açık `GET /api/proxies` parolayı vermeye devam etmez.

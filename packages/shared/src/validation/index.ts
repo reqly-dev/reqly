@@ -105,8 +105,6 @@ export const settingsPatchSchema = z
     'ui.sidebar_width': z.number().int().min(100).max(2000).optional(),
     'ui.request_pane_ratio': z.number().min(0.05).max(0.95).optional(),
     'ui.language': z.enum(['auto', 'tr', 'en']).optional(),
-    // Masaüstü kabuğunun açılıştaki sürüm denetimi — bkz. DEFAULT_SETTINGS
-    'update.auto_check': z.boolean().optional(),
   })
   .strict();
 

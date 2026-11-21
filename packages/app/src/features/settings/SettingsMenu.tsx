@@ -159,17 +159,9 @@ function SettingsForm() {
           {t('settings.updates.installed', { version })}
         </p>
       )}
-      <label className="kv-row">
-        <input
-          type="checkbox"
-          checked={settings['update.auto_check']}
-          onChange={(e) => void save({ 'update.auto_check': e.target.checked })}
-        />
-        <span>{t('settings.updates.autoCheck')}</span>
-      </label>
       <p className="hint">
         {t('settings.updates.hintBefore')}
-        <code>reqly.talhacigdem.tr/updates</code>
+        <code>reqster.talhacigdem.tr/updates</code>
         {t('settings.updates.hintAfter')}
       </p>
       {error && <p className="hint warn">{error}</p>}

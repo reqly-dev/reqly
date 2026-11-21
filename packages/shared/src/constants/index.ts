@@ -33,12 +33,6 @@ export const DEFAULT_SETTINGS = {
   'ui.request_pane_ratio': 0.5, // 0–1, istek/yanıt bölmesi oranı
   /** Arayüz dili; `auto` → tarayıcı/işletim sistemi dili `tr*` ise Türkçe, değilse İngilizce */
   'ui.language': 'auto' as UiLanguage,
-  /**
-   * Masaüstü kabuğu (Tauri) açılışta yeni sürüm denetlesin mi. Uygulamanın tek dış çağrısıdır
-   * (`reqster.talhacigdem.tr/updates`, yedek olarak eski `reqly.talhacigdem.tr`); gizlilik ilkesi gereği kullanıcı kapatabilir. Tarayıcıdan
-   * kullanımda etkisizdir.
-   */
-  'update.auto_check': true,
 } satisfies Record<string, SettingValue>;
 
 export type UiTheme = 'dark' | 'light';

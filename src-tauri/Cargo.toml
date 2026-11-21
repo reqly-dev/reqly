@@ -35,11 +35,10 @@ tauri-plugin-updater = "2.14"
 reqwest = { version = "0.13", default-features = false, features = ["json"] }
 serde_json = "1"
 tokio = { version = "1", features = ["time"] }
-# Kripto sağlayıcıyı erkenden kurmak için (bkz. update.rs schedule_checks); eklenti zaten ring ile getiriyor
+# Kripto sağlayıcıyı erkenden kurmak için (bkz. update.rs startup); eklenti zaten ring ile getiriyor
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
-
-[dev-dependencies]
-# Ön-sürüm (1.0.0-rc.N) sıralamasının updater'ın `release.version > current` kuralıyla uyumunu belgeleyen test.
+# Zorunlu güncelleme: kurulu sürüm manifestteki minimumVersion'ın altında mı (update.rs is_required); updater
+# aynı crate'i kullanıyor, ek derleme yok
 semver = "1"
 
 [profile.release]

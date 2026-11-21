@@ -2,18 +2,28 @@
 # Tek komutla sürüm çıkarma (CLAUDE.md "CI" bölümü): tüm workspace manifestleri + package-lock
 # yükseltilir → "Sürüm X" commit'i → vX etiketi → main + etiket push → CI Release'i üretir.
 #
-# Kullanım: deploy/surum.sh <rc|patch|minor|major|X.Y.Z[-rc.N]> [--no-push]
+# Kullanım: deploy/surum.sh <rc|patch|minor|major|X.Y.Z[-rc.N]> [--zorunlu] [--no-push]
 #   rc      → mevcut sürümün bir sonraki rc'si (1.0.0-rc.6 → 1.0.0-rc.7; 1.0.0 → 1.0.1-rc.0)
 #   patch|minor|major → kararlı sürüm (1.0.0-rc.7 + patch → 1.0.0)
 #   X.Y.Z   → doğrudan bu sürüm
+#   --zorunlu → zorunlu güncelleme: bu sürümün altındaki masaüstü kurulumları güncellenmeden açılmaz. Commit'e
+#               `Zorunlu-Guncelleme: evet` satırı yazılır; release.yml Release notuna işaret koyar, site yayını
+#               manifeste `minimumVersion` yazar (en yüksek işaretli sürüm).
 # Ortam: SURUM_COMMIT_TRAILERS (isteğe bağlı) commit mesajının sonuna eklenir (Co-Authored-By vb.);
 #        GIT_USER + GIT_TOKEN tanımlıysa push geçici credential helper ile yapılır (token URL'e gömülmez).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-arg="${1:-}"; push=1
-[[ -z "$arg" ]] && { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
-[[ "${2:-}" == "--no-push" ]] && push=0
+arg=""; push=1; required=0
+for a in "$@"; do
+  case "$a" in
+    --no-push) push=0 ;;
+    --zorunlu) required=1 ;;
+    -*) echo "HATA: bilinmeyen seçenek: $a"; exit 2 ;;
+    *) [[ -z "$arg" ]] || { echo "HATA: birden çok sürüm argümanı"; exit 2; }; arg="$a" ;;
+  esac
+done
+[[ -z "$arg" ]] && { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 [[ "$branch" == "main" ]] || { echo "HATA: main dalında değilsin ($branch)"; exit 1; }
@@ -60,11 +70,16 @@ grep -q "\"version\": \"$new\"" package-lock.json || { echo "HATA: package-lock.
 echo "sürüm: $old → $new"
 
 msg=$(mktemp); trap 'rm -f "$msg"' EXIT
-{ printf 'Sürüm %s\n' "$new"; [[ -n "${SURUM_COMMIT_TRAILERS:-}" ]] && printf '\n%s\n' "$SURUM_COMMIT_TRAILERS"; } > "$msg"
+{
+  printf 'Sürüm %s\n' "$new"
+  (( required )) && printf '\nZorunlu-Guncelleme: evet\n'
+  [[ -n "${SURUM_COMMIT_TRAILERS:-}" ]] && printf '\n%s\n' "$SURUM_COMMIT_TRAILERS"
+  true
+} > "$msg"
 git add package.json package-lock.json packages/*/package.json
 git commit -q -s -F "$msg"   # DCO: Signed-off-by (CONTRIBUTING.md)
 git tag -a "v$new" -m "Reqster $new"
-echo "commit: $(git rev-parse --short HEAD)  etiket: v$new"
+echo "commit: $(git rev-parse --short HEAD)  etiket: v$new$( (( required )) && echo '  (ZORUNLU güncelleme)')"
 
 if (( push )); then
   if [[ -n "${GIT_USER:-}" && -n "${GIT_TOKEN:-}" ]]; then

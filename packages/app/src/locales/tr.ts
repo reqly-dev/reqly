@@ -63,10 +63,9 @@ export const tr = {
   'settings.maxRedirects': 'En fazla yönlendirme',
   'settings.updates': 'Güncellemeler',
   'settings.updates.installed': 'Yüklü sürüm: {version}',
-  'settings.updates.autoCheck': 'Açılışta yeni sürüm denetle',
-  'settings.updates.hintBefore': 'Masaüstü uygulamasında geçerlidir. Yalnızca ',
+  'settings.updates.hintBefore': 'Masaüstü uygulaması açılışta ve günde bir yeni sürüm denetler. Yalnızca ',
   'settings.updates.hintAfter':
-    ' adresinden sürüm bilgisi okunur; başka hiçbir veri gönderilmez. Yeni sürüm varsa uygulama sorar, kendiliğinden kurmaz.',
+    ' adresinden sürüm bilgisi okunur; başka hiçbir veri gönderilmez. Yeni sürüm varsa uygulama sorar; zorunlu bir güncelleme kurulmadan uygulama açılmaz.',
 
   // Ortam menüsü ve Ortamlar / Değişkenler modalı
   'env.none': 'Ortam yok',
