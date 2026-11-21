@@ -59,7 +59,8 @@ npm run start             # tek port (7357): app'i build eder + server'ı statik
   ile yazar) "Güncellemeler denetleniyor" gösterirken görev `GET /api/settings` (`network.verify_tls`) ve
   `GET /api/internal/proxy-url` (aktif proxy, yoksa doğrudan) okur, `https://reqster.talhacigdem.tr/updates/latest.json`'u
   (erişilemezse eski `reqly.talhacigdem.tr`'yi; Tauri endpoint'leri sırayla dener) denetler. En fazla
-  `STARTUP_CHECK_BUDGET` (5 sn) beklenir; dolunca uygulama açılır, denetim arka planda biter. Yeni sürümde diyalog açılış
+  `STARTUP_CHECK_BUDGET` (5 sn) beklenir; dolunca uygulama açılır, denetim arka planda biter. Güncelleme yoksa açılış
+  ekranı kabuk başladığından beri en az `MIN_SPLASH` (1,2 sn) görünür ve son anda "Güncel" yazar (bir an görünüp kaybolmasın). Yeni sürümde diyalog açılış
   ekranındayken "Şimdi kur / Sonra"; seçilmeden uygulama açılmaz. **Zorunlu güncelleme:** manifestin üst düzeyindeki
   `minimumVersion`'ın altındaki kurulumda diyalog "Şimdi kur / Çık" (Çık → uygulama kapanır; kurulum başarısızsa
   kilitlemez, açılır). Manifeste `minimumVersion`'ı site yayını yazar (`npm run release rc --zorunlu` → sürüm commit'inde

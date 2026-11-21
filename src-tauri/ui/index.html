@@ -60,6 +60,10 @@
         text-align: left;
         animation: dots 1.5s steps(4, end) infinite;
       }
+      p.done::after {
+        content: none;
+        animation: none;
+      }
       @keyframes dots {
         0% { content: ''; }
         25% { content: '.'; }
@@ -77,8 +81,11 @@
     </main>
     <script>
       // Kabuk durum satırını webview.eval ile değiştirir (src-tauri/src/update.rs splash_status); IPC yok
-      window.__reqsterStatus = function (text) {
-        document.getElementById('status').textContent = text;
+      // done = son durum (ör. "Güncel"): sürüyor izlenimi veren nokta animasyonu durur
+      window.__reqsterStatus = function (text, done) {
+        var el = document.getElementById('status');
+        el.textContent = text;
+        el.classList.toggle('done', !!done);
       };
     </script>
   </body>
