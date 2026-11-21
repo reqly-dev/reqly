@@ -73,6 +73,7 @@ pub fn run() {
             closing: AtomicBool::new(false),
         })
         .setup(|app| {
+            update::mark_start(); // açılış ekranının en az görünme süresi buradan sayılır
             let handle = app.handle().clone();
             // Kabuk logu: stderr + app_data_dir/logs/shell.log (Windows'ta tek teşhis kaynağı)
             match app.path().app_data_dir() {
@@ -208,6 +209,7 @@ fn watch_sidecar(app: AppHandle, mut rx: tauri::async_runtime::Receiver<CommandE
                         let open_app = {
                             let (app, watch, url, base) = (app.clone(), Arc::clone(&watch), url.to_owned(), base.clone());
                             Box::new(move || {
+                                crate::rlog!("[reqster] açılış ekranı kapanıyor, uygulama yükleniyor");
                                 if let Err(err) = navigate_main(&app, &url) {
                                     report_failure(
                                         &app,

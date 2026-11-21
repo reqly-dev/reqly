@@ -24,6 +24,21 @@ use crate::{kill_sidecar, rlog, Sidecar, MAIN_WINDOW};
 
 /// Açılış ekranında güncelleme denetimine tanınan süre; dolunca uygulama açılır, denetim arka planda biter.
 const STARTUP_CHECK_BUDGET: Duration = Duration::from_secs(5);
+/// Güncelleme yoksa açılış ekranı kabuk başladığından beri en az bu kadar görünür; denetim çok hızlı bittiğinde
+/// ekran bir an görünüp kaybolmasın (son anda durum satırı "Güncel" yazar). Güncelleme varsa beklenmez.
+const MIN_SPLASH: Duration = Duration::from_millis(1200);
+
+/// Kabuğun başladığı an (`mark_start`, setup'ta); açılış ekranının en az süresi buna göre hesaplanır.
+static STARTED: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+
+pub(crate) fn mark_start() {
+    let _ = STARTED.set(std::time::Instant::now());
+}
+
+/// En az süreden geriye kalan bekleme (geçtiyse sıfır).
+fn splash_remaining(elapsed: Duration) -> Duration {
+    MIN_SPLASH.saturating_sub(elapsed)
+}
 /// Uygulama açık kaldığı sürece denetim bu aralıkla yinelenir.
 const RECHECK_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
 /// Sidecar'a yerel HTTP istekleri için zaman aşımı.
@@ -52,9 +67,18 @@ fn is_required(current_version: &str, manifest: &serde_json::Value) -> bool {
 /// Açılış ekranındaki durum satırını değiştirir (`ui/index.html` → `window.__reqsterStatus`). Pencere uygulamaya
 /// geçtiyse işlev tanımsızdır ve çağrı hiçbir şey yapmaz.
 fn splash_status(app: &AppHandle, text: &str) {
+    splash_eval(app, text, false);
+}
+
+/// Son durum (ör. "Güncel"): nokta animasyonu durur.
+fn splash_done(app: &AppHandle, text: &str) {
+    splash_eval(app, text, true);
+}
+
+fn splash_eval(app: &AppHandle, text: &str, done: bool) {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW) {
         let arg = serde_json::to_string(text).unwrap_or_else(|_| "\"\"".into());
-        let _ = window.eval(format!("window.__reqsterStatus && window.__reqsterStatus({arg})"));
+        let _ = window.eval(format!("window.__reqsterStatus && window.__reqsterStatus({arg}, {done})"));
     }
 }
 
@@ -114,6 +138,10 @@ pub(crate) fn startup(
                     } else {
                         declined = Some(update.version.clone());
                     }
+                } else {
+                    splash_done(&app, "Güncel");
+                    let elapsed = STARTED.get().map_or(MIN_SPLASH, |t| t.elapsed());
+                    tokio::time::sleep(splash_remaining(elapsed)).await;
                 }
                 open_app();
             }
@@ -415,6 +443,13 @@ mod tests {
         assert!(should_prompt(None, "1.0.0"));
         assert!(!should_prompt(Some("1.0.0"), "1.0.0"));
         assert!(should_prompt(Some("1.0.0"), "1.0.1"));
+    }
+
+    #[test]
+    fn acilis_ekrani_en_az_sureyi_tamamlar() {
+        assert_eq!(splash_remaining(Duration::from_millis(300)), Duration::from_millis(900));
+        assert_eq!(splash_remaining(MIN_SPLASH), Duration::ZERO);
+        assert_eq!(splash_remaining(Duration::from_secs(4)), Duration::ZERO); // yavaş açılışa ek bekleme yok
     }
 
     #[test]
